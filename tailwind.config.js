@@ -6,7 +6,17 @@ module.exports = {
   ],
   theme: {
     extend: {
-      
+      fontFamily:{
+        sans: 'Roboto, sans-serif'
+      },
+      colors: {
+        blue: {
+          500: '#22384B',
+        },
+        orange: {
+          500: '#F47D20',
+        },        
+      },
     },
   },
   plugins: [],
