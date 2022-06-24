@@ -7,7 +7,7 @@
     <section class="game-board grid grid-cols-4 gap-8 justify-center lg:grid-cols-6">
       <Card
         v-for="(card, index) in cardList"
-        :key="`card-${index}`"
+        :key="index"
         :value="card.value"
         :visible="card.visible"
         :indexCard="card.indexCard"
@@ -38,18 +38,32 @@ export default {
     const cardsSelected = ref([]);
     const statusSelection = ref("");
 
-    const cardsOnDeck = [1,2,3,4,5,6,7,8,9,10,11,12];
+    const cardsOnDeck = [
+      {name: 'american_a/tulsa_logo.png' },
+      {name: 'swac/a5.png' },
+      {name: 'america_ea/Binghamton_Bearcats.png' },
+      {name: 'mountain_w/PrmLogo%20-%20light%20BG%20RGB.png' },
+      {name: 'big_south/Charleston_Southern.png' },
+      {name: 'southland/v6.png' },
+      {name: 'conferences/Conf-USA.png' },
+      {name: 'meac/delawarestate_200x200.png' },
+      {name: 'missouri_v/Drake.png' },
+      {name: 'sun_belt/Georgia-Southern.png' },
+      {name: 'big_sky/Idaho-State.png' },
+      {name: 'northeast/LIU-Sharks.png' },
+    ];
 
     cardsOnDeck.forEach((card,index) => {
+      console.log(card.name);
       cardList.value.push({
-        value: card,
+        value: card.name,
         visible: false,
         indexCard: null,
         matched: false
       });
 
       cardList.value.push({
-        value: card,
+        value: card.name,
         visible: false,
         indexCard: null,
         matched: false
@@ -62,15 +76,6 @@ export default {
         indexCard: index
       }
     });
-
-    // for (let i = 0; i < 24; i++) {
-    //   cardList.value.push({
-    //     value: i,
-    //     visible: true,
-    //     indexCard: i,
-    //     matched: false
-    //   });
-    // }
 
     const GameStatus = computed(() => {
       return remainingPairs.value === 0 ? 'Player Wins' : `Remaning pairs: ${remainingPairs.value}`

@@ -1,4 +1,43 @@
 /** @type {import('tailwindcss').Config} */
+
+const plugin = require('tailwindcss/plugin')
+
+const backfaceVisibility = plugin(function({addUtilities}) {
+  addUtilities({
+    '.backface-visible': {
+      'backface-visibility': 'visible',
+    },
+    '.backface-hidden': {
+      'backface-visibility': 'hidden',
+    }
+  })
+});
+
+const rotateY = plugin(function({addUtilities}) {
+  addUtilities({
+    '.rotate-y-180': {
+      'transform': 'rotateY(180deg)',
+    }
+  })
+});
+
+const perspective = plugin(function({addUtilities}) {
+  addUtilities({
+    '.perspective-1000': {
+      'perspective': '1000px',
+    }
+  })
+});
+
+const preserve3d = plugin(function({addUtilities}) {
+  addUtilities({
+    '.preserve-3d': {
+      'transform-style': 'preserve-3d',
+    }
+  })
+});
+
+
 module.exports = {
   content: [
     "./index.html",
@@ -19,5 +58,5 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [backfaceVisibility, rotateY, perspective, preserve3d],
 }
