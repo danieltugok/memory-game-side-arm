@@ -20,6 +20,7 @@
     <p>{{remainingPairs}}</p>
     <p>{{GameStatus}}</p>
     <button @click="shuffleCards">Shuffle cards</button>
+    <button @click="restarGame">Restar game</button>
   </div>
 </template>
 
@@ -37,14 +38,39 @@ export default {
     const cardsSelected = ref([]);
     const statusSelection = ref("");
 
-    for (let i = 0; i < 24; i++) {
+    const cardsOnDeck = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+    cardsOnDeck.forEach((card,index) => {
       cardList.value.push({
-        value: i,
-        visible: true,
-        indexCard: i,
+        value: card,
+        visible: false,
+        indexCard: null,
         matched: false
       });
-    }
+
+      cardList.value.push({
+        value: card,
+        visible: false,
+        indexCard: null,
+        matched: false
+      });      
+    })
+    
+    cardList.value = cardList.value.map((card,index) => {
+      return {
+        ...card,
+        indexCard: index
+      }
+    });
+
+    // for (let i = 0; i < 24; i++) {
+    //   cardList.value.push({
+    //     value: i,
+    //     visible: true,
+    //     indexCard: i,
+    //     matched: false
+    //   });
+    // }
 
     const GameStatus = computed(() => {
       return remainingPairs.value === 0 ? 'Player Wins' : `Remaning pairs: ${remainingPairs.value}`
@@ -53,6 +79,19 @@ export default {
     const remainingPairs = computed(() => {
       return cardList.value.filter(card => card.matched === false).length / 2;
     })
+
+    const restarGame = () => {
+      shuffleCards();
+      cardList.value = cardList.value.map((card, index) => {
+        return {
+          ...card,
+          matched: false,
+          indexCard: index,
+          visible: true
+        }
+    })
+
+    }
 
     const shuffleCards = () => {
       cardList.value = cardList.value.sort(() => Math.random() - 0.5);
@@ -96,7 +135,8 @@ export default {
       statusSelection,
       remainingPairs,
       GameStatus,
-      shuffleCards
+      shuffleCards,
+      restarGame
     };
   },
 };

@@ -8,7 +8,7 @@
       v-if="visible"
       class="flip-card-front bg-red-600 text-white min-w-full min-h-full absolute"
     >
-      {{ value }} - {{matched}}
+      CardValue :{{ value }} - Matched:{{matched}} - indexCard:{{indexCard}}
     </div>
     <div
       v-else
