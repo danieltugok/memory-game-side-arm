@@ -3,9 +3,13 @@
     @click="cardSelected"
     class="flip-card w-40 h-40 relative text-center group perspective-1000"
   >
-    <div class="flip-card-inner shadow-md preserve-3d w-full h-full transition-transform duration-700" :class="visible?'rotate-y-180':''">
+    <div 
+      class="flip-card-inner shadow-md preserve-3d w-full h-full transition-transform duration-700" 
+      :class="visible?'rotate-y-180':''"
+    >
       <div
         class="flip-card-front border-4 border-gray-400 rounded p-2 bg-blue-200 text-black w-full h-full absolute rotate-y-180 backface-hidden"
+        :class="matched?'opacity-40 border-green-500':''"
       >
         <!-- {{ value }} - {{ matched }} - {{indexCard}} - {{visible}} -->
         <img :src="`https://clients.sidearmsports.com/sidearm_files/logos/${value}`" alt="">

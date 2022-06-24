@@ -4,24 +4,28 @@
       Memory Game <span>SideArm</span>
     </h1>
 
-    <section class="game-board grid grid-cols-4 gap-8 justify-center sm:grid-cols-4 lg:grid-cols-6">
-      <Card
-        v-for="(card, index) in cardList"
-        :key="index"
-        :value="card.value"
-        :visible="card.visible"
-        :indexCard="card.indexCard"
-        :matched="card.matched"
-        @card-selected="flip"
-      />
-    </section>
+       <TransitionGroup
+        name="shuffle" tag="div"
+        class="game-board grid grid-cols-4 gap-8 justify-center sm:grid-cols-4 lg:grid-cols-6"
+      >
+        <Card
+          v-for="card in cardList"
+          :key="`${card.value}-${card.pair}`"
+          :value="card.value"
+          :visible="card.visible"
+          :indexCard="card.indexCard"
+          :matched="card.matched"
+          @card-selected="flip"
+        />
+    </TransitionGroup>
+
+
     <!-- <h2>++++{{ cardsSelected }}</h2> -->
     <p>>>>>{{ statusSelection }}</p>
     <!-- <p>ooooo{{remainingPairs}}</p> -->
     <p>Matches: {{pairsMatched}}</p>
     <p>Game Status: {{GameStatus}}</p>
-    <p>Clicks: {{clicks}}</p>
-    <p>Tries/Moves: {{tries}}</p>
+    <p>Moves: {{moves}}</p>
     <br/>
     <button @click="restarGame">Restar game</button>
   </div>
@@ -41,8 +45,7 @@ export default {
     const cardList = ref([]);
     const cardsSelected = ref([]);
     const statusSelection = ref("");
-    const clicks = ref(0);   
-    
+    const clicks = ref(0); 
     const cardsOnDeck = deck;
 
     cardsOnDeck.forEach((card,index) => {
@@ -50,14 +53,16 @@ export default {
         value: card,
         visible: false,
         indexCard: index,
-        matched: false
+        matched: false,
+        pair: "a"
       });
 
       cardList.value.push({
         value: card,
         visible: false,
         indexCard: cardsOnDeck.length + index + 1,
-        matched: false
+        matched: false,
+        pair: "b"
       });      
     })
 
@@ -69,7 +74,7 @@ export default {
       return cardList.value.filter(card => card.matched === false).length / 2;
     })
 
-    const tries = computed(() => {
+    const moves = computed(() => {
       return Math.floor(clicks.value/2);
     })
 
@@ -151,7 +156,7 @@ export default {
       GameStatus,
       shuffleCards,
       restarGame,
-      tries,
+      moves,
       clicks,
       pairsMatched
     };
@@ -159,4 +164,28 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+ /* .shuffle-enter-from{
+  opacity: 0;
+ }
+ .shuffle-enter-to{
+  opacity: 1;
+ } */
+
+ .shuffle-enter-active,
+ .shuffle-leave-active,
+ .shuffle-move {
+  transition: all .6s ease;
+ }
+
+ /*
+ .shuffle-leave-from{
+  opacity: 1;
+
+ }
+ .shuffle-leave-to{
+  opacity: 0;
+ } */
+
+
+</style>
