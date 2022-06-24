@@ -30,7 +30,7 @@
 <script>
 import { ref, watch, computed } from "vue";
 import Card from "./components/Card.vue";
-// import deck from './assets/cardsOnDeck.json'
+import deck from './assets/cardsOnDeck.json'
 
 export default {
   name: "App",
@@ -43,45 +43,23 @@ export default {
     const statusSelection = ref("");
     const clicks = ref(0);   
     
-    // const cardsOnDeck = ref(deck)
+    const cardsOnDeck = deck;
 
-    const cardsOnDeck = [
-      {name: 'american_a/tulsa_logo.png' },
-      {name: 'swac/a5.png' },
-      {name: 'america_ea/Binghamton_Bearcats.png' },
-      {name: 'mountain_w/PrmLogo%20-%20light%20BG%20RGB.png' },
-      {name: 'big_south/Charleston_Southern.png' },
-      {name: 'southland/v6.png' },
-      {name: 'conferences/Conf-USA.png' },
-      {name: 'meac/delawarestate_200x200.png' },
-      {name: 'missouri_v/Drake.png' },
-      {name: 'sun_belt/Georgia-Southern.png' },
-      {name: 'big_sky/Idaho-State.png' },
-      {name: 'northeast/LIU-Sharks.png' },
-    ];
-
-    cardsOnDeck.forEach(card => {
+    cardsOnDeck.forEach((card,index) => {
       cardList.value.push({
-        value: card.name,
+        value: card,
         visible: false,
-        indexCard: null,
+        indexCard: index,
         matched: false
       });
 
       cardList.value.push({
-        value: card.name,
+        value: card,
         visible: false,
-        indexCard: null,
+        indexCard: cardsOnDeck.length + index + 1,
         matched: false
       });      
     })
-    
-    cardList.value = cardList.value.map((card,index) => {
-      return {
-        ...card,
-        indexCard: index
-      }
-    });
 
     const GameStatus = computed(() => {
       return remainingPairs.value === 0 ? 'Player Wins' : `Remaning pairs: ${remainingPairs.value}`
@@ -101,15 +79,24 @@ export default {
 
     const restarGame = () => {
       console.log('restart the game');
-      shuffleCards();
-      cardList.value = cardList.value.map((card, index) => {
+      cardList.value = cardList.value.map(card => {
         return {
           ...card,
-          matched: false,
-          indexCard: index,
           visible: false
         }
-     })
+      })
+
+      setTimeout(() => {
+        shuffleCards();
+        cardList.value = cardList.value.map((card, index) => {
+          return {
+            ...card,
+            matched: false,
+            indexCard: index,
+            visible: false
+          }
+        })      
+      }, 700);
     }
 
     const shuffleCards = () => {
@@ -121,16 +108,10 @@ export default {
         cardList.value[payload.indexCard].visible = true;
         clicks.value++
 
-
-        if (cardsSelected.value[0]){
-          
-          // Checking if clicked on the exactly same card
-          if (cardsSelected.value[0].indexCard != payload.indexCard) {
-            cardsSelected.value[1] = payload
-          }
-        } else {
-          cardsSelected.value[0] = payload;
-        }
+        if (cardsSelected.value[0]){          
+          // Check if clicked on the exactly same card
+          if (cardsSelected.value[0].indexCard != payload.indexCard) cardsSelected.value[1] = payload
+        } else cardsSelected.value[0] = payload;
       }
     };
 
