@@ -53,8 +53,7 @@ export default {
       {name: 'northeast/LIU-Sharks.png' },
     ];
 
-    cardsOnDeck.forEach((card,index) => {
-      console.log(card.name);
+    cardsOnDeck.forEach(card => {
       cardList.value.push({
         value: card.name,
         visible: false,
@@ -94,13 +93,13 @@ export default {
           indexCard: index,
           visible: true
         }
-    })
-
+     })
     }
 
     const shuffleCards = () => {
       cardList.value = cardList.value.sort(() => Math.random() - 0.5);
     }
+
 
     const flip = (payload) => {
       cardList.value[payload.indexCard].visible = true;
@@ -122,9 +121,12 @@ export default {
             cardList.value[firstCard.indexCard].matched = true;
             cardList.value[secondCard.indexCard].matched = true;
           } else {
-            statusSelection.value = "Opps! Not yet...";
-            cardList.value[firstCard.indexCard].visible = false;
-            cardList.value[secondCard.indexCard].visible = false;
+            setTimeout(() => {
+              statusSelection.value = "Opps! Not yet...";
+              cardList.value[firstCard.indexCard].visible = false;
+              cardList.value[secondCard.indexCard].visible = false;              
+            }, 1500);
+
           }
 
           cardsSelected.value.length = 0;
