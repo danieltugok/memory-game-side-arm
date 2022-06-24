@@ -4,7 +4,7 @@
       Memory Game <span>SideArm</span>
     </h1>
 
-    <section class="game-board grid grid-cols-4 gap-8 justify-center lg:grid-cols-6">
+    <section class="game-board grid grid-cols-4 gap-8 justify-center sm:grid-cols-4 lg:grid-cols-6">
       <Card
         v-for="(card, index) in cardList"
         :key="index"
@@ -15,11 +15,14 @@
         @card-selected="flip"
       />
     </section>
-    <h2>{{ cardsSelected }}</h2>
-    <p>{{ statusSelection }}</p>
-    <p>{{remainingPairs}}</p>
-    <p>{{GameStatus}}</p>
-    <button @click="shuffleCards">Shuffle cards</button>
+    <!-- <h2>++++{{ cardsSelected }}</h2> -->
+    <p>>>>>{{ statusSelection }}</p>
+    <!-- <p>ooooo{{remainingPairs}}</p> -->
+    <p>Matches: {{pairsMatched}}</p>
+    <p>Game Status: {{GameStatus}}</p>
+    <p>Clicks: {{clicks}}</p>
+    <p>Tries/Moves: {{tries}}</p>
+    <br/>
     <button @click="restarGame">Restar game</button>
   </div>
 </template>
@@ -27,6 +30,7 @@
 <script>
 import { ref, watch, computed } from "vue";
 import Card from "./components/Card.vue";
+// import deck from './assets/cardsOnDeck.json'
 
 export default {
   name: "App",
@@ -37,6 +41,9 @@ export default {
     const cardList = ref([]);
     const cardsSelected = ref([]);
     const statusSelection = ref("");
+    const clicks = ref(0);   
+    
+    // const cardsOnDeck = ref(deck)
 
     const cardsOnDeck = [
       {name: 'american_a/tulsa_logo.png' },
@@ -84,14 +91,23 @@ export default {
       return cardList.value.filter(card => card.matched === false).length / 2;
     })
 
+    const tries = computed(() => {
+      return Math.floor(clicks.value/2);
+    })
+
+    const pairsMatched = computed(() => {
+      return cardsOnDeck.length - remainingPairs.value;
+    })
+
     const restarGame = () => {
+      console.log('restart the game');
       shuffleCards();
       cardList.value = cardList.value.map((card, index) => {
         return {
           ...card,
           matched: false,
           indexCard: index,
-          visible: true
+          visible: false
         }
      })
     }
@@ -100,14 +116,25 @@ export default {
       cardList.value = cardList.value.sort(() => Math.random() - 0.5);
     }
 
+    const flip = payload => {
+      if (!cardList.value[payload.indexCard].visible){      
+        cardList.value[payload.indexCard].visible = true;
+        clicks.value++
 
-    const flip = (payload) => {
-      cardList.value[payload.indexCard].visible = true;
 
-      cardsSelected.value[0]
-        ? (cardsSelected.value[1] = payload)
-        : (cardsSelected.value[0] = payload);
+        if (cardsSelected.value[0]){
+          
+          // Checking if clicked on the exactly same card
+          if (cardsSelected.value[0].indexCard != payload.indexCard) {
+            cardsSelected.value[1] = payload
+          }
+        } else {
+          cardsSelected.value[0] = payload;
+        }
+      }
     };
+
+    restarGame();
 
     watch(
       cardsSelected,
@@ -121,12 +148,11 @@ export default {
             cardList.value[firstCard.indexCard].matched = true;
             cardList.value[secondCard.indexCard].matched = true;
           } else {
+            statusSelection.value = "Opps! Not yet...";
             setTimeout(() => {
-              statusSelection.value = "Opps! Not yet...";
               cardList.value[firstCard.indexCard].visible = false;
               cardList.value[secondCard.indexCard].visible = false;              
             }, 1500);
-
           }
 
           cardsSelected.value.length = 0;
@@ -143,7 +169,10 @@ export default {
       remainingPairs,
       GameStatus,
       shuffleCards,
-      restarGame
+      restarGame,
+      tries,
+      clicks,
+      pairsMatched
     };
   },
 };

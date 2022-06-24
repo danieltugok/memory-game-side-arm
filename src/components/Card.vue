@@ -7,8 +7,8 @@
       <div
         class="flip-card-front border-4 border-gray-400 rounded p-2 bg-blue-200 text-black w-full h-full absolute rotate-y-180 backface-hidden"
       >
-        {{ value }} - {{ matched }} - {{indexCard}}
-        <!-- <img :src="`https://clients.sidearmsports.com/sidearm_files/logos/${value}`" alt=""> -->
+        <!-- {{ value }} - {{ matched }} - {{indexCard}} - {{visible}} -->
+        <img :src="`https://clients.sidearmsports.com/sidearm_files/logos/${value}`" alt="">
       </div>
       <div
         class="flip-card-back cursor-pointer rounded bg-green-600 text-white w-full h-full absolute backface-hidden"
@@ -20,7 +20,6 @@
 </template>
 
 <script>
-import { ref } from 'vue';
 
 export default {
   props: {
@@ -42,13 +41,13 @@ export default {
     },
   },
 
-  setup({ indexCard, value, visible }, context) {  
+  setup(props, context) {  
 
     const cardSelected = () => {
-      context.emit("card-selected", {
-        indexCard,
-        cardValue: value,
-      });
+        context.emit("card-selected", {
+          indexCard: props.indexCard,
+          cardValue: props.value,
+        });
     };
 
     return {
