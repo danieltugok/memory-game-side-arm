@@ -1,5 +1,5 @@
 <template>
-  <section class="flex text-6xl justify-center content-center">
+  <section class="flex text-4xl justify-center content-center">
     <span class="time">{{ time }}</span>
   </section>
 </template>
@@ -26,7 +26,7 @@ export default {
 
   }),
   watch: {
-    startStatus(newValue, oldValue) {
+    startStatus(newValue) {
       if (newValue === constants.TIMER_START) this.start()
       else if (newValue === constants.TIMER_STOP) this.stop()
       else this.reset()
@@ -41,10 +41,7 @@ export default {
         this.timeBegan = new Date();
       }
 
-      if (this.timeStopped !== null) {
-        this.stoppedDuration += new Date() - this.timeStopped;
-      }
-
+      if (this.timeStopped !== null) this.stoppedDuration += new Date() - this.timeStopped;
       this.started = setInterval(this.clockRunning, 10);
       this.running = true;
     },
@@ -72,14 +69,10 @@ export default {
         sec = timeElapsed.getUTCSeconds()
         // ms = timeElapsed.getUTCMilliseconds();
 
-      this.time =
-        // this.zeroPrefix(hour, 2) +
-        // ":" +
-        this.zeroPrefix(min, 2) +
-        ":" +
-        this.zeroPrefix(sec, 2)
-        // "." +
+        // this.zeroPrefix(hour, 2)
         // this.zeroPrefix(ms, 3);
+
+      this.time = `${this.zeroPrefix(min, 2)}:${this.zeroPrefix(sec, 2)}`
     },
 
     zeroPrefix(num, digit) {
@@ -92,3 +85,11 @@ export default {
   },
 };
 </script>
+
+<style>
+
+.time{
+  font-family: 'Roboto Mono', monospace;
+}
+</style>
+
