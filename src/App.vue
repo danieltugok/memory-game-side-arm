@@ -1,12 +1,12 @@
 <template>
-  <div class="my-20 max-w-screen-xl flex flex-col justify-center items-center">
+  <div class="my-20 flex flex-col justify-center items-center">
     <h1 class="text-3xl font-bold text-center mb-10">
       Memory Game <span>SideArm</span>
     </h1>
 
        <TransitionGroup
         name="shuffle" tag="div"
-        class="game-board grid grid-cols-4 gap-8 justify-center sm:grid-cols-4 lg:grid-cols-6"
+        class="game-board grid grid-cols-4 gap-2 justify-center md:grid-cols-6 md:gap-4 lg:grid-cols-8"
       >
         <Card
           v-for="card in cardList"
@@ -19,22 +19,25 @@
         />
     </TransitionGroup>
 
-
-    <!-- <h2>++++{{ cardsSelected }}</h2> -->
-    <p>>>>>{{ statusSelection }}</p>
-    <!-- <p>ooooo{{remainingPairs}}</p> -->
+    <p>{{GameStatus}}</p>
+    <p>statusSelection: {{ statusSelection }}</p>
     <p>Matches: {{pairsMatched}}</p>
-    <p>Game Status: {{GameStatus}}</p>
     <p>Moves: {{moves}}</p>
     <br/>
-    <button @click="restarGame">Restar game</button>
+    <button 
+      @click="restarGame"
+      class="bg-orange-500 py-4 px-5 text-blue-500 rounded font-bold transition duration-300 hover:bg-orange-400 ">
+      Restart Game
+    </button>
   </div>
 </template>
 
 <script>
 import { ref, watch, computed } from "vue";
 import Card from "./components/Card.vue";
-import deck from './assets/cardsOnDeck.json'
+import cardsOnDeck from './assets/cardsOnDeck.json'
+import party from 'party-js'
+import constants from './assets/constants'
 
 export default {
   name: "App",
@@ -46,7 +49,6 @@ export default {
     const cardsSelected = ref([]);
     const statusSelection = ref("");
     const clicks = ref(0); 
-    const cardsOnDeck = deck;
 
     cardsOnDeck.forEach((card,index) => {
       cardList.value.push({
@@ -67,7 +69,7 @@ export default {
     })
 
     const GameStatus = computed(() => {
-      return remainingPairs.value === 0 ? 'Player Wins' : `Remaning pairs: ${remainingPairs.value}`
+      return cardList.value.every(item=>item.matched === true) ? 'YOU Win' : `Remaning pairs: ${remainingPairs.value}`
     })
 
     const remainingPairs = computed(() => {
@@ -83,7 +85,6 @@ export default {
     })
 
     const restarGame = () => {
-      console.log('restart the game');
       cardList.value = cardList.value.map(card => {
         return {
           ...card,
@@ -101,7 +102,7 @@ export default {
             visible: false
           }
         })      
-      }, 700);
+      }, constants.TIME_FLIPPING_CARD);
     }
 
     const shuffleCards = () => {
@@ -124,13 +125,15 @@ export default {
 
     watch(
       cardsSelected,
-      (currentValue) => {
+      (currentValue) =>{ 
         if (currentValue.length === 2) {
           const firstCard = currentValue[0];
-          const secondCard = currentValue[1];
+          const secondCard = currentValue[1];          
 
           if (firstCard.cardValue === secondCard.cardValue) {
             statusSelection.value = "Match!";
+            party.sparkles(firstCard.element.target,{shapes: ["star"]});
+            party.sparkles(secondCard.element.target,{shapes: ["star"]});
             cardList.value[firstCard.indexCard].matched = true;
             cardList.value[secondCard.indexCard].matched = true;
           } else {
@@ -138,7 +141,7 @@ export default {
             setTimeout(() => {
               cardList.value[firstCard.indexCard].visible = false;
               cardList.value[secondCard.indexCard].visible = false;              
-            }, 1500);
+            }, constants.TIME_SHOWING_CARD);
           }
 
           cardsSelected.value.length = 0;
@@ -165,27 +168,9 @@ export default {
 </script>
 
 <style>
- /* .shuffle-enter-from{
-  opacity: 0;
- }
- .shuffle-enter-to{
-  opacity: 1;
- } */
-
  .shuffle-enter-active,
  .shuffle-leave-active,
  .shuffle-move {
   transition: all .6s ease;
  }
-
- /*
- .shuffle-leave-from{
-  opacity: 1;
-
- }
- .shuffle-leave-to{
-  opacity: 0;
- } */
-
-
 </style>
