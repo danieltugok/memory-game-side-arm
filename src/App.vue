@@ -1,8 +1,10 @@
 <template>
   <div class="my-20 flex flex-col justify-center items-center">
     <h1 class="text-3xl font-bold text-center mb-10">
-      Memory Game <span>SideArm</span>
+      SideArm <span>Matches</span>
     </h1>
+
+    <Timer :startStatus="startStatus"/>
 
        <TransitionGroup
         name="shuffle" tag="div"
@@ -35,6 +37,7 @@
 <script>
 import { ref, watch, computed } from "vue";
 import Card from "./components/Card.vue";
+import Timer from "./components/Timer.vue";
 import cardsOnDeck from './assets/cardsOnDeck.json'
 import party from 'party-js'
 import constants from './assets/constants'
@@ -43,12 +46,14 @@ export default {
   name: "App",
   components: {
     Card,
+    Timer
   },
   setup() {
     const cardList = ref([]);
     const cardsSelected = ref([]);
     const statusSelection = ref("");
     const clicks = ref(0); 
+    const startStatus = ref(constants.TIMER_STOP);
 
     cardsOnDeck.forEach((card,index) => {
       cardList.value.push({
@@ -69,7 +74,12 @@ export default {
     })
 
     const GameStatus = computed(() => {
-      return cardList.value.every(item=>item.matched === true) ? 'YOU Win' : `Remaning pairs: ${remainingPairs.value}`
+      if (cardList.value.every(item=>item.matched === true)) {
+        startStatus.value = constants.TIMER_STOP;
+        return 'YOU Win'
+        } else {
+          return `Remaning pairs: ${remainingPairs.value}`
+        }
     })
 
     const remainingPairs = computed(() => {
@@ -85,10 +95,14 @@ export default {
     })
 
     const restarGame = () => {
+      clicks.value = 0;
+      startStatus.value = constants.TIMER_RESET;
+
       cardList.value = cardList.value.map(card => {
         return {
           ...card,
-          visible: false
+          visible: false,
+          matched: false
         }
       })
 
@@ -110,6 +124,12 @@ export default {
     }
 
     const flip = payload => {
+      // const hasCardsOpenedThatNotMatch = cardList.value.some(item=>{
+      //   return item.matched === false && item.visible === true
+      // })
+
+      startStatus.value = constants.TIMER_START;
+
       if (!cardList.value[payload.indexCard].visible){      
         cardList.value[payload.indexCard].visible = true;
         clicks.value++
@@ -161,7 +181,8 @@ export default {
       restarGame,
       moves,
       clicks,
-      pairsMatched
+      pairsMatched,
+      startStatus
     };
   },
 };

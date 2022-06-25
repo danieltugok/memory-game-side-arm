@@ -6,7 +6,24 @@
 
 
 body{
-  @apply bg-blue-500 text-gray-200;
+  /* @apply bg-blue-500 text-gray-200; */
+  @apply h-14 bg-gradient-to-r from-cyan-900 to-blue-500;
+  /* background-image: url('https://sidearmsports.com/wp-content/uploads/2018/03/TTU_stadium.jpg'); */
+  /* background-size: cover; */
   -webkit-font-smoothing: subpixel-antialiased
+}
+
+body::after {
+  content: "";
+  background: url('https://sidearmsports.com/wp-content/uploads/2018/03/TTU_stadium.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.1;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  z-index: -1;   
 }
 
