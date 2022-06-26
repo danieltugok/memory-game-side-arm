@@ -1,13 +1,46 @@
 <template>
-  <div class="my-20 flex flex-col justify-center items-center">
-    <h1 class="title text-7xl text-orange-500 font-bold text-center mb-10">
-      SideArm <span>Match</span>
-    </h1>
+  <div class="my-20 flex flex-col justify-center items-center relative">
+    <!-- w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 -->
+    <div class="flex flex-col justify-between w-9/12 items-center md:flex-row mb-10 max-w-6xl" >
+      <div>
+        <h1 class="title text-7xl mb-10 text-orange-500 text-center font-bold md:text-left md:mb-0">
+          SideArm <span>Match</span>
+        </h1>
+      </div>
+
+      <div class="text-orange-500 flex flex-col text-center gap-4">
+        <div class="flex gap-4">
+          <div
+            class="bg-opacity-10 bg-white rounded-2xl p-3 relative text-4xl flex flex-col justify-center align-center content-center"
+          >
+            <div>
+              <span class="text-center roboto-mono">{{ pairsMatched }}</span>
+              <span class="text-sm right-2 roboto-mono">/{{ remainingPairs }}</span>
+            </div>
+            <span class="text-xs text-center font-bold roboto-mono">Matches</span>
+          </div>
+          <div
+            class="bg-opacity-10 bg-white rounded-2xl p-3 relative text-4xl flex flex-col justify-center align-center content-center"
+          >
+          <span class="text-center roboto-mono">{{ moves }}</span>
+          <span class="text-xs text-center font-bold roboto-mono">Moves</span>
+          </div>
+
+        <div
+          class="flex flex-col justify-around items-center bg-opacity-10 bg-white rounded-2xl p-3"
+        >
+          <Timer :startStatus="startStatus" />
+          <div class="font-bold text-xs roboto-mono">Timer</div>
+        </div>
+
+        </div>
+      </div>
+    </div>
 
     <div 
       v-if="GameStatus"
-      class="w-96 absolute z-50"
-      >
+      class="w-96 absolute z-50 top-[16%]"
+    >
 
       <img
         class="img-circle"
@@ -33,37 +66,13 @@
         @card-selected="flip"
       />
     </TransitionGroup>
-    <!-- <p>statusSelection: {{ statusSelection }}</p> -->
-    <div class="text-orange-500 flex flex-col text-center gap-4">
-      <div class="flex gap-4">
-        <div
-          class="bg-opacity-10 bg-white rounded-2xl p-3 relative text-7xl flex flex-col justify-center align-center content-center"
-        >
-          <div>
-            <span class="text-center">{{ pairsMatched }}</span>
-            <span class="text-sm right-2">/ {{ remainingPairs }}</span>
-          </div>
-          <span class="text-lg text-center">Matches</span>
-        </div>
-        <div
-          class="bg-opacity-10 bg-white rounded-2xl p-3 relative text-7xl flex flex-col justify-center align-center content-center"
-        >
-          <span class="text-center">{{ moves }}</span>
-          <span class="text-lg text-center">Moves</span>
-        </div>
-      </div>
 
-      <div
-        class="flex justify-around items-center bg-opacity-10 bg-white rounded-2xl p-3"
-      >
-        <div>Timer</div>
-        <Timer :startStatus="startStatus" />
-      </div>
-    </div>
+    <!-- <p>statusSelection: {{ statusSelection }}</p> -->
+    
     <br />
     <button
       @click="restarGame"
-      class="bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded font-bold transition duration-300 hover:bg-orange-400 hover:text-blue-500"
+      class="font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
     >
       Restart Game
     </button>
@@ -74,7 +83,7 @@
 import { ref, watch, computed } from "vue";
 import Card from "./components/Card.vue";
 import Timer from "./components/Timer.vue";
-import cardsOnDeck from "./assets/cardsOnDeck.json";
+import cardsOnDeckFull from "./assets/cardsOnDeck.json";
 import party from "party-js";
 import constants from "./assets/constants";
 
@@ -91,8 +100,18 @@ export default {
     const clicks = ref(0);
     const startStatus = ref(null);
     const firstPlay = ref(true);
+    const cardsOnDeck = ref(null)
 
-    cardsOnDeck.forEach((card, index) => {
+    // Shuffle the initial cards and selecting only 12 cards to start the game
+    const chosenCards = () => {
+      cardsOnDeck.value = cardsOnDeckFull;
+      cardsOnDeck.value = cardsOnDeck.value.sort(() => Math.random() - 0.5)
+      cardsOnDeck.value = cardsOnDeck.value.slice(0, 12);
+    }
+
+    chosenCards();
+
+    cardsOnDeck.value.forEach((card, index) => {
       cardList.value.push({
         value: card,
         visible: true,
@@ -103,8 +122,8 @@ export default {
 
       cardList.value.push({
         value: card,
-        visible: false,
-        indexCard: cardsOnDeck.length + index + 1,
+        visible: true,
+        indexCard: cardsOnDeck.value.length + index + 1,
         matched: false,
         pair: "b",
       });
@@ -127,14 +146,16 @@ export default {
     });
 
     const pairsMatched = computed(() => {
-      return cardsOnDeck.length - remainingPairs.value;
+      return cardsOnDeck.value.length - remainingPairs.value;
     });
 
     const restarGame = () => {
       clicks.value = 0;
       startStatus.value = constants.TIMER_RESET;
 
-      if (firstPlay.value === false) {
+      chosenCards();
+
+      if (!firstPlay.value) {
         shuffleCards();
         cardList.value = cardList.value.map((card, index) => {
           return {
@@ -144,10 +165,12 @@ export default {
             visible: false,
           };
         });
+        firstPlay.value = true;
       } else {
         cardList.value = cardList.value.map((card, index) => {
           return {
             ...card,
+            visible: true,
             matched: false,
             indexCard: index,
           };
@@ -165,11 +188,14 @@ export default {
     };
 
     const flip = (payload) => {
-      // const hasCardsOpenedThatNotMatch = cardList.value.some(item=>{
-      //   return item.matched === false && item.visible === true
-      // })
 
-      if (!cardList.value[payload.indexCard].visible) {
+      // Checking if has 2 cards opened to lock the possibility to open others
+      const hasCardsOpenedThatNotMatch = cardList.value.filter(item=>{
+        return item.matched === false && item.visible === true
+      })
+      
+      if (hasCardsOpenedThatNotMatch.length <= 1 && !cardList.value[payload.indexCard].visible) {
+        console.log('entrou');
         startStatus.value = constants.TIMER_START;
         cardList.value[payload.indexCard].visible = true;
         clicks.value++;
@@ -180,6 +206,8 @@ export default {
             cardsSelected.value[1] = payload;
         } else cardsSelected.value[0] = payload;
       }
+
+      
     };
 
     restarGame();

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Open+Sans:ital,wght@0,300;0,400;1,300&family=Roboto+Mono:wght@100&family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Roboto+Mono:wght@100&family=Roboto:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -25,4 +25,8 @@ body::after {
   right: 0;
   position: absolute;
   z-index: -1;   
+}
+
+.roboto-mono{
+  font-family: 'Roboto Mono', monospace;
 }

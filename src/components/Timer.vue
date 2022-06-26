@@ -1,6 +1,6 @@
 <template>
   <section class="flex text-4xl justify-center content-center">
-    <span class="time">{{ time }}</span>
+    <span class="roboto-mono">{{ time }}</span>
   </section>
 </template>
 
@@ -85,11 +85,3 @@ export default {
   },
 };
 </script>
-
-<style>
-
-.time{
-  font-family: 'Roboto Mono', monospace;
-}
-</style>
-

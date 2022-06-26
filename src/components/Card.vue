@@ -15,9 +15,10 @@
         <img :src="`https://clients.sidearmsports.com/sidearm_files/logos/${value}`" alt="">
       </div>
       <div
-        class="flip-card-back shadow-md cursor-pointer rounded bg-green-600 text-white w-full h-full absolute backface-hidden"
+        style="background-image: url('../assets/img/sidearm_logo_negative.png')"
+        class="flip-card-back shadow-md cursor-pointer border-4 border-gray-400 rounded text-white w-full h-full absolute backface-hidden"
       >
-        <img class="rounded" src="https://previews.123rf.com/images/shottythefirst/shottythefirst1403/shottythefirst140300042/26763558-abstract-blue-playing-card-back-pattern-texture.jpg" alt="">
+        <img class="rounded" style="mix-blend-mode: multiply;" src="../assets/img/sidearm_logo_negative.png" alt="">
       </div>
     </div>
   </div>
