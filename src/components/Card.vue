@@ -8,17 +8,15 @@
       :class="[visible?'rotate-y-180':'', `duration-${durationFlipCard}`]"
     >
       <div
-        class="flip-card-front shadow-md border-4 border-gray-400 rounded p-2 bg-white text-black w-full h-full absolute rotate-y-180 backface-hidden"
+        class="flip-card-front shadow-md border-4 rounded p-2 bg-white text-black w-full h-full absolute rotate-y-180 backface-hidden"
         :class="matched?'opacity-10 border-green-500':''"
       >
-        <!-- {{ value }} - {{ matched }} - {{indexCard}} - {{visible}} -->
         <img :src="`https://clients.sidearmsports.com/sidearm_files/logos/${value}`" alt="">
       </div>
       <div
-        style="background-image: url('../assets/img/sidearm_logo_negative.png')"
-        class="flip-card-back shadow-md cursor-pointer border-4 border-gray-400 rounded text-white w-full h-full absolute backface-hidden"
+        class="flip-card-back p-4 bg-green-500 shadow-md cursor-pointer rounded text-white w-full h-full absolute backface-hidden"
       >
-        <img class="rounded" style="mix-blend-mode: multiply;" src="../assets/img/sidearm_logo_negative.png" alt="">
+        <img class="rounded" src="../assets/img/sidearm_logo.png" alt="">
       </div>
     </div>
   </div>

@@ -67,6 +67,7 @@
       />
     </TransitionGroup>
 
+
     <!-- <p>statusSelection: {{ statusSelection }}</p> -->
     
     <br />
@@ -99,35 +100,32 @@ export default {
     const statusSelection = ref("");
     const clicks = ref(0);
     const startStatus = ref(null);
-    const firstPlay = ref(true);
-    const cardsOnDeck = ref(null)
+    const cardsOnDeck = ref([]);
 
     // Shuffle the initial cards and selecting only 12 cards to start the game
     const chosenCards = () => {
-      cardsOnDeck.value = cardsOnDeckFull;
-      cardsOnDeck.value = cardsOnDeck.value.sort(() => Math.random() - 0.5)
-      cardsOnDeck.value = cardsOnDeck.value.slice(0, 12);
+      cardList.value = [];
+      cardsOnDeck.value = cardsOnDeckFull.sort(() => Math.random() - 0.5).slice(0, 2);
+
+      cardsOnDeck.value.forEach((card, index) => {
+        cardList.value.push({
+          value: card,
+          visible: true,
+          indexCard: index,
+          matched: false,
+          pair: "a",
+        });
+
+        cardList.value.push({
+          value: card,
+          visible: true,
+          indexCard: cardsOnDeck.value.length + index + 1,
+          matched: false,
+          pair: "b",
+        });
+      });
     }
 
-    chosenCards();
-
-    cardsOnDeck.value.forEach((card, index) => {
-      cardList.value.push({
-        value: card,
-        visible: true,
-        indexCard: index,
-        matched: false,
-        pair: "a",
-      });
-
-      cardList.value.push({
-        value: card,
-        visible: true,
-        indexCard: cardsOnDeck.value.length + index + 1,
-        matched: false,
-        pair: "b",
-      });
-    });
 
     const GameStatus = computed(() => {
       if (cardList.value.every((item) => item.matched === true)) {
@@ -149,13 +147,22 @@ export default {
       return cardsOnDeck.value.length - remainingPairs.value;
     });
 
-    const restarGame = () => {
+    const restarGame = () => {      
       clicks.value = 0;
+      cardsSelected.value = [];
       startStatus.value = constants.TIMER_RESET;
 
       chosenCards();
+      console.log("cardsOnDeck.value", cardsOnDeck.value);       
 
-      if (!firstPlay.value) {
+      cardList.value = cardList.value.map((card, index) => {
+        return {
+          ...card,
+          visible: true,
+        };
+      });      
+
+      setTimeout(() => {
         shuffleCards();
         cardList.value = cardList.value.map((card, index) => {
           return {
@@ -165,22 +172,7 @@ export default {
             visible: false,
           };
         });
-        firstPlay.value = true;
-      } else {
-        cardList.value = cardList.value.map((card, index) => {
-          return {
-            ...card,
-            visible: true,
-            matched: false,
-            indexCard: index,
-          };
-        });
-        firstPlay.value = false;
-
-        setTimeout(() => {
-          restarGame();
-        }, 3000);
-      }
+      }, 3000);
     };
 
     const shuffleCards = () => {
@@ -188,14 +180,12 @@ export default {
     };
 
     const flip = (payload) => {
-
       // Checking if has 2 cards opened to lock the possibility to open others
       const hasCardsOpenedThatNotMatch = cardList.value.filter(item=>{
         return item.matched === false && item.visible === true
       })
       
       if (hasCardsOpenedThatNotMatch.length <= 1 && !cardList.value[payload.indexCard].visible) {
-        console.log('entrou');
         startStatus.value = constants.TIMER_START;
         cardList.value[payload.indexCard].visible = true;
         clicks.value++;
@@ -205,9 +195,7 @@ export default {
           if (cardsSelected.value[0].indexCard != payload.indexCard)
             cardsSelected.value[1] = payload;
         } else cardsSelected.value[0] = payload;
-      }
-
-      
+      }      
     };
 
     restarGame();
@@ -253,8 +241,7 @@ export default {
       moves,
       clicks,
       pairsMatched,
-      startStatus,
-      firstPlay,
+      startStatus
     };
   },
 };
