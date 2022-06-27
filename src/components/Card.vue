@@ -1,7 +1,7 @@
 <template>
   <div
     @click="cardSelected"
-    class="flip-card w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 relative text-center group perspective-1000"
+    class="flip-card w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 relative text-center group perspective-1000"
   >
     <div 
       class="flip-card-inner preserve-3d w-full h-full transition-transform" 

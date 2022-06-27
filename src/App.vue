@@ -1,17 +1,17 @@
 <template>
-  <div class="my-20 flex flex-col justify-center items-center relative">
+  <div class="my-7 flex flex-col justify-center items-center relative md:my-20">
     <!-- w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 -->
-    <div class="flex flex-col justify-between w-9/12 items-center md:flex-row mb-10 max-w-6xl" >
+    <div class="flex flex-col justify-between w-9/12 items-center mb-10 max-w-6xl md:flex-row ">
       <div>
-        <h1 class="title text-7xl mb-10 text-orange-500 text-center font-bold md:text-left md:mb-0">
+        <h1 class="title text-5xl mb-10 mr-12 text-orange-500 text-center font-bold md:text-left md:mb-0 md:text-5xl ">
           SideArm <span>Match</span>
         </h1>
-      </div>
+      </div>      
 
       <div class="text-orange-500 flex flex-col text-center gap-4">
         <div class="flex gap-4">
           <div
-            class="bg-opacity-10 bg-white rounded-2xl p-3 relative text-4xl flex flex-col justify-center align-center content-center"
+            class="bg-opacity-10 bg-white rounded-2xl py-3 px-4 relative text-4xl flex flex-col justify-center align-center content-center"
           >
             <div>
               <span class="text-center roboto-mono">{{ pairsMatched }}</span>
@@ -20,14 +20,14 @@
             <span class="text-xs text-center font-bold roboto-mono">Matches</span>
           </div>
           <div
-            class="bg-opacity-10 bg-white rounded-2xl p-3 relative text-4xl flex flex-col justify-center align-center content-center"
+            class="bg-opacity-10 bg-white rounded-2xl py-3 px-4 relative text-4xl flex flex-col justify-center align-center content-center"
           >
           <span class="text-center roboto-mono">{{ moves }}</span>
           <span class="text-xs text-center font-bold roboto-mono">Moves</span>
           </div>
 
         <div
-          class="flex flex-col justify-around items-center bg-opacity-10 bg-white rounded-2xl p-3"
+          class="flex flex-col justify-around items-center bg-opacity-10 bg-white rounded-2xl py-3 px-4"
         >
           <Timer :startStatus="startStatus" />
           <div class="font-bold text-xs roboto-mono">Timer</div>
@@ -39,16 +39,17 @@
 
     <div 
       v-if="GameStatus"
-      class="w-96 absolute z-50 top-[16%]"
+      class="w-[32rem] absolute z-50 top-[9%]"
     >
-
-      <img
-        class="img-circle"
-        src="https://i0.wp.com/www.pyroshows.com/wp-content/uploads/Trophy-Icon-Blue.png?ssl=1"
-        alt="Trophy"
+      <lottie-player 
+        src="./trophy.json"
+        background="transparent" 
+        speed="1" 
+        style="width: 512px; height: 512px;"
+        autoplay
       />
 
-      <div class="ribbon text-center absolute bottom-32 left-24">{{ GameStatus }}</div>
+      <div class="ribbon text-center absolute bottom-20 left-40">{{ GameStatus }}</div>
     </div>
 
     <TransitionGroup
@@ -73,7 +74,7 @@
     <br />
     <button
       @click="restarGame"
-      class="font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
+      class="mb-10 md:mb-10 font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
     >
       Restart Game
     </button>
@@ -105,7 +106,7 @@ export default {
     // Shuffle the initial cards and selecting only 12 cards to start the game
     const chosenCards = () => {
       cardList.value = [];
-      cardsOnDeck.value = cardsOnDeckFull.sort(() => Math.random() - 0.5).slice(0, 2);
+      cardsOnDeck.value = cardsOnDeckFull.sort(() => Math.random() - 0.5).slice(0, 12);
 
       cardsOnDeck.value.forEach((card, index) => {
         cardList.value.push({
