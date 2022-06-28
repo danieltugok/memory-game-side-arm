@@ -4,10 +4,10 @@
 
 <p align="center">
   <a href="#-tecnologies">Tecnologies</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#-projet">Project</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#-layout">Layout</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#memo-license">License</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="#run-project">Run the App</a>
+  <a href="#-project">Project</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-deploy">Deploy</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-license">License</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="#-run">Run the App</a>
 </p>
 
 <p align="center">
@@ -43,7 +43,7 @@ This project is MIT License.
 
 This project was deployed in [VERCEL](https://vercel.com/), and you can check the final result online in [this link](https://matchgame.vercel.app/).
 
-## 🏍️ Run the project 
+## 🏍️ Run the Project 
 
 ```
 shell
