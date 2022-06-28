@@ -35,7 +35,7 @@ This project was developed with:
 - Dependencies PartyJs and Lottiefiles
 
 
-## :memo: License
+## 📝 License
 
 This project is MIT License.
 
