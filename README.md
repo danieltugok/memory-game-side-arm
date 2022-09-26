@@ -45,8 +45,7 @@ This project was deployed in [VERCEL](https://vercel.com/), and you can check th
 
 ## 🏍️ Run the Project 
 
-```
-shell
+```shell
 
 //install Dependencies
 npm install
@@ -54,9 +53,9 @@ or
 yarn
 
 //Run project
-npm run dev
-//or
-yarn dev
+$npm run dev
+or
+$yarn dev
 
 ```
 
