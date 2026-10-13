@@ -44,8 +44,8 @@ The project `.npmrc` sets the public npm registry. Keep it: the user-level `~/.n
 - **Hidden information.** `publicState()` never includes the logo or school name of a face-down card. It identifies players by a public `seat` ID and never by their private `playerId`. Keep both rules when you change what the server sends.
 - **Identity.** The private `playerId` is kept in `sessionStorage`, so each tab is a different player and a reload keeps the same player. A known `playerId` can always take its seat back, even during a game.
 - **Disconnects.** A disconnect only skips that player's turns. The game ends early only when a seat is actually removed, either through Leave or after the 60-second hold. Otherwise a reload would end the game.
-- **Server address.** The client connects to `VITE_SOCKET_URL`. When that isn't set, it uses port 3001 on the same host as the page, which makes local and LAN play work. The server reads the deck from `../src/assets/cardsOnDeck.json`. `LEVEL_PAIRS` in `game.js` must match `LEVELS` in `constants.js`.
-- **Deployment.** `server/README.md` covers deploying to a Hostinger VPS with PM2, Nginx and Let's Encrypt. The server keeps its own `server/.npmrc` and `package-lock.json`.
+- **Server address.** The client connects to `VITE_SOCKET_URL`. When that isn't set, it uses port 3001 on the same host as the page, which makes local and LAN play work. The server reads its own copy of the deck, `server/cardsOnDeck.json`, which `npm run collect-logos` writes next to the client's copy. That way the `server/` folder can be deployed on its own. `LEVEL_PAIRS` in `game.js` must match `LEVELS` in `constants.js`.
+- **Deployment.** `server/README.md` covers two Hostinger options: a Node.js Web app with root directory `server` (the one in use), or a VPS with PM2, Nginx and Let's Encrypt. The server keeps its own `server/.npmrc` and `package-lock.json`.
 
 ## Styling
 

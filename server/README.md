@@ -34,6 +34,25 @@ npm test --prefix server
 
 The game website needs one setting in its build: `VITE_SOCKET_URL`, the public address of this server, for example `https://game.yourdomain.com`.
 
+## Deploy as a Hostinger Node.js Web app (recommended)
+
+This option works on Hostinger Business and Cloud plans. In hPanel, go to **Sites → Criar site / Add website → Web app Node.js** and import the GitHub repo with these settings:
+
+| Setting | Value |
+|---|---|
+| Framework preset | Express (or Other) |
+| Branch | `main` |
+| Root directory | `server` |
+| Build command | leave empty |
+| Output directory | leave empty |
+| Entry file | `index.js` |
+| Node.js version | 22 |
+| Environment variable | `CLIENT_ORIGIN` = `https://matchgame.vercel.app` |
+
+When it's deployed, open the app's address. It should show "SideArm Match server is running." Then set `VITE_SOCKET_URL` in Vercel to that address (see step 4 below). Every push to `main` redeploys the server automatically. The server's output appears under **Runtime logs**.
+
+Hostinger stops the app after a while with no traffic, and the first visitor afterwards wakes it up. The game shows "Connecting to game server…" in the meantime and waits up to 60 seconds.
+
 ## Deploy to a Hostinger VPS
 
 These steps only work on a **VPS** plan, which gives you SSH access to a Linux server. Hostinger's shared, Web and Cloud hosting plans can't keep a Node.js process running, so they can't host this server. In hPanel, a VPS appears under **VPS** with an IP address and root access.
@@ -53,7 +72,7 @@ Connect to the VPS over SSH and run:
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs git nginx
 
-# Code. Only the server folder is used, but it also reads src/assets/cardsOnDeck.json
+# Code: only the server folder is used
 git clone <your-repo-url> sidearm-match
 cd sidearm-match/server
 npm ci --omit=dev

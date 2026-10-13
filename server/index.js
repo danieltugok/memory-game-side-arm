@@ -12,8 +12,8 @@ const PREVIEW_MS = 3000;
 const SHOW_MISS_MS = 1200;
 const SEAT_KEPT_MS = 60_000;
 
-// One deck for both modes: the same file the single-player game imports
-const deck = JSON.parse(readFileSync(new URL("../src/assets/cardsOnDeck.json", import.meta.url), "utf8"));
+// Copy of src/assets/cardsOnDeck.json, written by `npm run collect-logos`, so this folder deploys on its own
+const deck = JSON.parse(readFileSync(new URL("./cardsOnDeck.json", import.meta.url), "utf8"));
 
 const rooms = new Map(); // roomId -> room
 const timers = new Map(); // `${roomId}:${name}` -> timeout

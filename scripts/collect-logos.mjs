@@ -6,6 +6,8 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const SCHOOLS_FILE = new URL("./schools.txt", import.meta.url);
 const OUTPUT_FILE = new URL("../src/assets/cardsOnDeck.json", import.meta.url);
+// The multiplayer server is deployed on its own (only the server/ folder), so it gets a copy
+const SERVER_COPY = new URL("../server/cardsOnDeck.json", import.meta.url);
 const CONCURRENCY = 5;
 const TIMEOUT_MS = 20000;
 const HEADERS = { "User-Agent": "Mozilla/5.0 (SideArm Match logo collector)" };
@@ -87,5 +89,7 @@ if (deck.length < 12) {
   process.exit(1);
 }
 
-await writeFile(OUTPUT_FILE, JSON.stringify(deck, null, 2) + "\n");
-console.log(`\nWrote ${deck.length} logos to src/assets/cardsOnDeck.json (${domains.length - deck.length} skipped).`);
+const json = JSON.stringify(deck, null, 2) + "\n";
+await writeFile(OUTPUT_FILE, json);
+await writeFile(SERVER_COPY, json);
+console.log(`\nWrote ${deck.length} logos to src/assets/cardsOnDeck.json and server/cardsOnDeck.json (${domains.length - deck.length} skipped).`);
