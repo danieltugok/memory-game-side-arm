@@ -19,6 +19,10 @@ npm run dev      # terminal 2: game on http://localhost:5173
 
 Open http://localhost:5173 in two browser windows, or in two tabs. Each tab counts as a separate player. Vite forwards `/socket.io` to the game server.
 
+If port 3001 is busy, run `PORT=3002 npm run server` and `SERVER_PORT=3002 npm run dev`.
+
+The game server doesn't reload when its code changes. After you pull or edit files in `server/`, stop it with Ctrl+C and run `npm run server` again.
+
 To play from a phone on the same Wi-Fi, run `npm run dev -- --host` and open the "Network" address that Vite prints.
 
 To run it exactly like production, with one server for the page and multiplayer:

@@ -110,12 +110,26 @@ const deleteRoom = (room) => {
   rooms.delete(room.id);
 };
 
-const startRound = (room, playerId) => {
-  if (!game.startGame(room, playerId, deck)) return;
+// The preview timer ends the 3-second look at the cards; then play begins.
+const beginPreview = (room) => {
   broadcast(room);
   setTimer(`${room.id}:preview`, PREVIEW_MS, () => {
     if (game.endPreview(room)) broadcast(room);
   });
+};
+
+const startRound = (room, playerId) => {
+  if (game.startGame(room, playerId, deck)) beginPreview(room);
+};
+
+// Host restarts mid-game. A pending flip-back from the old deck must not touch the new one.
+const restartRound = (socket, room) => {
+  if (!game.restartGame(room, socket.data.playerId, deck)) return false;
+  clearTimer(`${room.id}:miss`);
+  beginPreview(room);
+  const host = room.players.find((p) => p.id === socket.data.playerId);
+  socket.to(room.id).emit("room:notice", { message: `${host.name} restarted the game` });
+  return true;
 };
 
 const leaveRoom = (socket) => {
@@ -169,6 +183,11 @@ io.on("connection", (socket) => {
   socket.on("game:again", () => {
     const room = rooms.get(socket.data.roomId);
     if (room) startRound(room, socket.data.playerId);
+  });
+
+  socket.on("game:restart", () => {
+    const room = rooms.get(socket.data.roomId);
+    if (room) restartRound(socket, room);
   });
 
   socket.on("card:flip", ({ index } = {}) => {

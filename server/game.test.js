@@ -13,6 +13,7 @@ import {
   roomInfo,
   winners,
   canStart,
+  restartGame,
 } from "./game.js";
 
 const deck = Array.from({ length: 30 }, (_, i) => ({ name: `School ${i}`, logo: `https://logos/${i}.png` }));
@@ -228,4 +229,55 @@ test("public state hides face-down cards and private player ids", () => {
   assert.ok(state.players.every((p) => !("id" in p)));
   assert.equal(state.you, room.players[1].seat);
   assert.equal(state.turn, room.players[0].seat);
+});
+
+test("restart: the host can restart mid-game with a new deck and scores at 0", () => {
+  const room = playing(["ana", "bob"]);
+  const [a, b] = pairIndexes(room);
+  flipCard(room, "ana", a);
+  flipCard(room, "ana", b);
+  const [c, d] = missIndexes(room);
+  flipCard(room, "ana", c);
+  flipCard(room, "ana", d);
+  resolveMiss(room);
+  assert.equal(room.turn, "bob");
+  const oldCardIds = room.cards.map((card) => card.id).join();
+
+  assert.equal(restartGame(room, "ana", deck), true);
+  assert.equal(room.phase, "preview");
+  assert.equal(room.turn, "ana", "host takes the first turn");
+  assert.ok(room.players.every((p) => p.score === 0));
+  assert.equal(room.cards.length, 12);
+  assert.ok(room.cards.every((card) => card.faceUp && !card.matched));
+  assert.notEqual(room.cards.map((card) => card.id).join(), oldCardIds);
+});
+
+test("restart: only the host, and only during a game", () => {
+  const room = lobby();
+  assert.equal(restartGame(room, "ana", deck), false, "not in the lobby");
+  startGame(room, "ana", deck);
+  assert.equal(restartGame(room, "bob", deck), false, "not a guest");
+  assert.equal(restartGame(room, "ana", deck), true, "works during the preview");
+  endPreview(room);
+  room.phase = "finished";
+  assert.equal(restartGame(room, "ana", deck), false, "not after the game ended (Play again covers that)");
+});
+
+test("restart: works while a miss is being shown", () => {
+  const room = playing();
+  const [a, b] = missIndexes(room);
+  flipCard(room, "ana", a);
+  flipCard(room, "ana", b);
+  assert.equal(room.phase, "resolving");
+  assert.equal(restartGame(room, "ana", deck), true);
+  assert.deepEqual(room.flipped, []);
+  assert.equal(room.phase, "preview");
+});
+
+test("restart: disconnected players keep their seat", () => {
+  const room = playing(["ana", "bob", "cy"]);
+  disconnectPlayer(room, "cy");
+  restartGame(room, "ana", deck);
+  assert.equal(room.players.length, 3);
+  assert.equal(joinRoom(room, { id: "cy", name: "cy" }), null, "cy can come back");
 });

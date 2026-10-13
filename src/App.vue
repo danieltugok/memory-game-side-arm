@@ -60,6 +60,23 @@
       Connection lost. Reconnecting…
     </div>
 
+    <div
+      v-else-if="mp.notice && screen === 'multi'"
+      role="status"
+      class="fixed top-0 inset-x-0 z-50 bg-orange-500 text-blue-500 text-center font-bold roboto-mono py-2"
+    >
+      {{ mp.notice }}
+    </div>
+
+    <ConfirmDialog
+      :open="confirmRestart"
+      title="Restart the game?"
+      message="Everyone gets a new deck and all scores go back to 0."
+      confirmLabel="Restart"
+      @confirm="restartMulti"
+      @cancel="confirmRestart = false"
+    />
+
     <StartScreen
       v-if="screen === 'start'"
       :joinInfo="joinInfo"
@@ -127,6 +144,13 @@
         >
           Play again
         </button>
+        <button
+          v-else-if="mp.isHost"
+          class="btn-outline py-4 px-5"
+          @click="confirmRestart = true"
+        >
+          Restart game
+        </button>
         <button class="btn-outline py-4 px-5" @click="backToStart">Leave</button>
       </div>
       <p v-if="mp.room.phase === 'finished' && !mp.isHost" class="text-sm">Waiting for the host to start a new game…</p>
@@ -136,6 +160,7 @@
 
 <script>
 import { ref, reactive, computed, watch } from "vue";
+import ConfirmDialog from "./components/ConfirmDialog.vue";
 import GameBoard from "./components/GameBoard.vue";
 import Lobby from "./components/Lobby.vue";
 import Scoreboard from "./components/Scoreboard.vue";
@@ -152,6 +177,7 @@ const setRoomInUrl = (roomId) => {
 export default {
   name: "App",
   components: {
+    ConfirmDialog,
     GameBoard,
     Lobby,
     Scoreboard,
@@ -166,6 +192,7 @@ export default {
     const mode = ref(null); // null (start screen) | "single" | "multi"
     const joinInfo = ref(null); // room summary when opened from a room link
     const loadingRoomInfo = ref(false);
+    const confirmRestart = ref(false);
     let nickname = "";
 
     const screen = computed(() => {
@@ -216,6 +243,22 @@ export default {
       mode.value = "multi";
       mp.joinRoom(joinInfo.value.id, name);
     };
+
+    const restartMulti = () => {
+      confirmRestart.value = false;
+      mp.restartGame();
+    };
+
+    // The game ended (or we left) while the dialog was open: restarting no longer applies
+    watch(screen, (current) => {
+      if (current !== "multi") confirmRestart.value = false;
+    });
+    watch(
+      () => mp.room?.phase,
+      (phase) => {
+        if (phase === "finished") confirmRestart.value = false;
+      }
+    );
 
     const onMultiFlip = (payload) => {
       if (mp.isMyTurn) mp.flip(payload.indexCard);
@@ -275,6 +318,8 @@ export default {
       onJoin,
       onMultiFlip,
       backToStart,
+      confirmRestart,
+      restartMulti,
     };
   },
 };

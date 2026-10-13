@@ -40,6 +40,8 @@ export function useMultiplayer() {
   const status = ref("idle");
   const room = ref(null);
   const error = ref(null);
+  const notice = ref(null); // short message from the server, e.g. "Ana restarted the game"
+  let noticeTimer = null;
   const playerId = getPlayerId();
 
   let socket = null;
@@ -79,6 +81,12 @@ export function useMultiplayer() {
     socket.on("room:state", (state) => {
       room.value = state;
       error.value = null;
+    });
+
+    socket.on("room:notice", ({ message }) => {
+      notice.value = message;
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => (notice.value = null), 4000);
     });
 
     socket.on("room:error", (err) => {
@@ -128,6 +136,7 @@ export function useMultiplayer() {
 
   const startGame = () => socket?.emit("game:start");
   const playAgain = () => socket?.emit("game:again");
+  const restartGame = () => socket?.emit("game:restart");
   const flip = (index) => socket?.emit("card:flip", { index });
 
   const leave = () => {
@@ -138,6 +147,7 @@ export function useMultiplayer() {
     afterConnect = null;
     room.value = null;
     error.value = null;
+    notice.value = null;
     status.value = "idle";
     saveRoom(null, null);
   };
@@ -155,6 +165,7 @@ export function useMultiplayer() {
     status,
     room,
     error,
+    notice,
     me,
     isHost,
     isMyTurn,
@@ -165,6 +176,7 @@ export function useMultiplayer() {
     fetchRoomInfo,
     startGame,
     playAgain,
+    restartGame,
     flip,
     leave,
     retry,

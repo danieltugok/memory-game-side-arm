@@ -109,13 +109,9 @@ export const canStart = (room, playerId) =>
   (room.phase === "lobby" || room.phase === "finished") &&
   connectedPlayers(room).length >= MIN_PLAYERS;
 
-// Deals a new deck face up for the preview. Used for the first game and for "Play again".
-export const startGame = (room, playerId, deck, random = Math.random) => {
-  if (!canStart(room, playerId)) return false;
-
-  room.players = connectedPlayers(room);
+// New deck face up for the preview, scores at 0, host plays first.
+const deal = (room, deck, random) => {
   room.players.forEach((p) => (p.score = 0));
-
   const logos = shuffle(deck, random).slice(0, LEVEL_PAIRS[room.level]);
   room.cards = logos.flatMap(({ logo, name }) => [
     { id: newSeat(), logo, name, faceUp: true, matched: false },
@@ -124,6 +120,21 @@ export const startGame = (room, playerId, deck, random = Math.random) => {
   room.flipped = [];
   room.turn = room.hostId;
   room.phase = "preview";
+};
+
+// First game and "Play again". Seats of players who are gone are dropped.
+export const startGame = (room, playerId, deck, random = Math.random) => {
+  if (!canStart(room, playerId)) return false;
+  room.players = connectedPlayers(room);
+  deal(room, deck, random);
+  return true;
+};
+
+// Host restarts in the middle of a game. Disconnected seats are kept, since
+// those players may be reloading and should be able to come back.
+export const restartGame = (room, playerId, deck, random = Math.random) => {
+  if (playerId !== room.hostId || !isActive(room)) return false;
+  deal(room, deck, random);
   return true;
 };
 
