@@ -8,7 +8,7 @@
         </h1>
       </div>      
 
-      <div class="text-orange-500 flex flex-col text-center gap-4">
+      <div v-if="level" class="text-orange-500 flex flex-col text-center gap-4">
         <div class="flex gap-4">
           <div
             class="bg-opacity-10 bg-white rounded-2xl py-3 px-4 relative text-4xl flex flex-col justify-center align-center content-center"
@@ -52,16 +52,37 @@
       <div class="ribbon text-center absolute bottom-20 left-40">{{ GameStatus }}</div>
     </div>
 
+    <div
+      v-if="!level"
+      class="level-menu w-full max-w-md px-4 flex flex-col items-center gap-6 text-orange-500 roboto-mono"
+    >
+      <h2 class="text-xl font-bold">Choose your level</h2>
+      <div class="w-full flex flex-col gap-4">
+        <button
+          v-for="(option, key) in levels"
+          :key="key"
+          @click="startLevel(key)"
+          class="w-full flex justify-between items-center bg-white bg-opacity-10 border border-orange-500 rounded-2xl py-4 px-6 transition duration-300 hover:bg-orange-400 hover:text-blue-500"
+        >
+          <span class="text-2xl font-bold">{{ option.label }}</span>
+          <span class="text-sm">{{ option.pairs * 2 }} cards</span>
+        </button>
+      </div>
+    </div>
+
     <TransitionGroup
+      v-else
       name="shuffle"
       tag="div"
-      class="game-board grid grid-cols-4 gap-2 mb-10 justify-center md:grid-cols-6 md:gap-4 lg:grid-cols-8"
+      class="game-board grid mb-10 justify-center"
+      :class="levels[level].boardClass"
     >
       <Card
         v-for="card in cardList"
         :key="`${card.value}-${card.pair}`"
         :value="card.value"
         :name="card.name"
+        :sizeClass="levels[level].cardSizeClass"
         :visible="card.visible"
         :indexCard="card.indexCard"
         :matched="card.matched"
@@ -73,12 +94,20 @@
     <!-- <p>statusSelection: {{ statusSelection }}</p> -->
     
     <br />
-    <button
-      @click="restarGame"
-      class="mb-10 md:mb-10 font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
-    >
-      Restart Game
-    </button>
+    <div v-if="level" class="flex gap-4 mb-10">
+      <button
+        @click="restarGame"
+        class="font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
+      >
+        Restart Game
+      </button>
+      <button
+        @click="changeLevel"
+        class="font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
+      >
+        Change Level
+      </button>
+    </div>
   </div>
 </template>
 
@@ -103,11 +132,15 @@ export default {
     const clicks = ref(0);
     const startStatus = ref(null);
     const cardsOnDeck = ref([]);
+    const level = ref(null);
+    const levels = constants.LEVELS;
 
-    // Shuffle the full deck and pick 12 logos to start the game
+    // Shuffle the full deck and pick as many logos as the level has pairs
     const chosenCards = () => {
       cardList.value = [];
-      cardsOnDeck.value = [...cardsOnDeckFull].sort(() => Math.random() - 0.5).slice(0, 12);
+      cardsOnDeck.value = [...cardsOnDeckFull]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, levels[level.value].pairs);
 
       cardsOnDeck.value.forEach((card, index) => {
         cardList.value.push({
@@ -132,7 +165,7 @@ export default {
 
 
     const GameStatus = computed(() => {
-      if (cardList.value.every((item) => item.matched === true)) {
+      if (cardList.value.length && cardList.value.every((item) => item.matched === true)) {
         startStatus.value = constants.TIMER_STOP;
         return "YOU Win!";
       }
@@ -183,6 +216,21 @@ export default {
       }, 3000);
     };
 
+    const startLevel = (key) => {
+      level.value = key;
+      restarGame();
+    };
+
+    const changeLevel = () => {
+      clearTimeout(startGameTimeout);
+      clicks.value = 0;
+      cardsSelected.value = [];
+      cardList.value = [];
+      cardsOnDeck.value = [];
+      startStatus.value = constants.TIMER_RESET;
+      level.value = null;
+    };
+
     const shuffleCards = () => {
       cardList.value = cardList.value.sort(() => Math.random() - 0.5);
     };
@@ -206,8 +254,6 @@ export default {
       }      
     };
 
-    restarGame();
-
     watch(
       cardsSelected,
       (currentValue) => {
@@ -225,7 +271,10 @@ export default {
             cardList.value[secondCard.indexCard].matched = true;
           } else {
             statusSelection.value = "Opps! Not yet...";
+            const deck = cardList.value;
             setTimeout(() => {
+              // Skip if the player restarted or changed level in the meantime
+              if (cardList.value !== deck) return;
               cardList.value[firstCard.indexCard].visible = false;
               cardList.value[secondCard.indexCard].visible = false;
             }, constants.TIME_SHOWING_CARD);
@@ -249,7 +298,11 @@ export default {
       moves,
       clicks,
       pairsMatched,
-      startStatus
+      startStatus,
+      level,
+      levels,
+      startLevel,
+      changeLevel
     };
   },
 };
