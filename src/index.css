@@ -30,3 +30,16 @@ body::after {
 .roboto-mono{
   font-family: 'Roboto Mono', monospace;
 }
+
+/* Orange outline button used on the start screen, lobby and game screens */
+.btn-outline {
+  font-weight: 700;
+  color: #f47d20;
+  border: 1px solid #f47d20;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+.btn-outline:not(:disabled):hover {
+  background-color: #fb923c;
+  color: #22384b;
+}

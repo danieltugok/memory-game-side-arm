@@ -13,14 +13,14 @@
         :class="matched?'opacity-10 border-green-500':''"
       >
         <img
-          v-if="!imageFailed"
+          v-if="value && !imageFailed"
           :src="value"
           :alt="name"
           class="w-full h-full object-contain"
           @error="imageFailed = true"
         >
         <div
-          v-else
+          v-else-if="name"
           class="w-full h-full flex items-center justify-center text-xs md:text-sm font-bold leading-tight"
         >
           {{ name }}
@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import constants from '../assets/constants'
 
 export default {
@@ -70,6 +70,8 @@ export default {
   setup(props, context) { 
     const durationFlipCard = constants.TIME_FLIPPING_CARD
     const imageFailed = ref(false)
+    // In multiplayer the logo only arrives when the card is turned face up
+    watch(() => props.value, () => (imageFailed.value = false))
 
     const cardSelected = (ele) => {
       context.emit("card-selected", {

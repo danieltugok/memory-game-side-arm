@@ -1,308 +1,280 @@
 <template>
   <div class="my-7 flex flex-col justify-center items-center relative md:my-20">
-    <!-- w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 -->
     <div class="flex flex-col justify-between w-9/12 items-center mb-10 max-w-6xl md:flex-row ">
       <div>
         <h1 class="title text-5xl mb-10 mr-12 text-orange-500 text-center font-bold md:text-left md:mb-0 md:text-5xl ">
           SideArm <span>Match</span>
         </h1>
-      </div>      
+      </div>
 
-      <div v-if="level" class="text-orange-500 flex flex-col text-center gap-4">
+      <div v-if="screen === 'single'" class="text-orange-500 flex flex-col text-center gap-4">
         <div class="flex gap-4">
           <div
             class="bg-opacity-10 bg-white rounded-2xl py-3 px-4 relative text-4xl flex flex-col justify-center align-center content-center"
           >
             <div>
-              <span class="text-center roboto-mono">{{ pairsMatched }}</span>
-              <span class="text-sm right-2 roboto-mono">/{{ remainingPairs }}</span>
+              <span class="text-center roboto-mono">{{ single.pairsMatched }}</span>
+              <span class="text-sm right-2 roboto-mono">/{{ single.remainingPairs }}</span>
             </div>
             <span class="text-xs text-center font-bold roboto-mono">Matches</span>
           </div>
           <div
             class="bg-opacity-10 bg-white rounded-2xl py-3 px-4 relative text-4xl flex flex-col justify-center align-center content-center"
           >
-          <span class="text-center roboto-mono">{{ moves }}</span>
+          <span class="text-center roboto-mono">{{ single.moves }}</span>
           <span class="text-xs text-center font-bold roboto-mono">Moves</span>
           </div>
 
         <div
           class="flex flex-col justify-around items-center bg-opacity-10 bg-white rounded-2xl py-3 px-4"
         >
-          <Timer :startStatus="startStatus" />
+          <Timer :startStatus="single.startStatus" />
           <div class="font-bold text-xs roboto-mono">Timer</div>
         </div>
 
         </div>
       </div>
+
+      <Scoreboard v-else-if="screen === 'multi'" :room="mp.room" />
     </div>
 
-    <div 
-      v-if="GameStatus"
+    <div
+      v-if="winText"
       class="w-[32rem] absolute z-50 top-[9%]"
     >
-      <lottie-player 
+      <lottie-player
         src="./trophy.json"
-        background="transparent" 
-        speed="1" 
+        background="transparent"
+        speed="1"
         style="width: 512px; height: 512px;"
         autoplay
       />
 
-      <div class="ribbon text-center absolute bottom-20 left-40">{{ GameStatus }}</div>
+      <div class="ribbon text-center absolute bottom-20 left-40">{{ winText }}</div>
     </div>
 
     <div
-      v-if="!level"
-      class="level-menu w-full max-w-md px-4 flex flex-col items-center gap-6 text-orange-500 roboto-mono"
+      v-if="mp.status === 'reconnecting' && mp.room"
+      class="fixed top-0 inset-x-0 z-50 bg-orange-500 text-blue-500 text-center font-bold roboto-mono py-2"
     >
-      <h2 class="text-xl font-bold">Choose your level</h2>
-      <div class="w-full flex flex-col gap-4">
-        <button
-          v-for="(option, key) in levels"
-          :key="key"
-          @click="startLevel(key)"
-          class="w-full flex justify-between items-center bg-white bg-opacity-10 border border-orange-500 rounded-2xl py-4 px-6 transition duration-300 hover:bg-orange-400 hover:text-blue-500"
-        >
-          <span class="text-2xl font-bold">{{ option.label }}</span>
-          <span class="text-sm">{{ option.pairs * 2 }} cards</span>
-        </button>
-      </div>
+      Connection lost. Reconnecting…
     </div>
 
-    <TransitionGroup
-      v-else
-      name="shuffle"
-      tag="div"
-      class="game-board grid mb-10 justify-center"
-      :class="levels[level].boardClass"
+    <StartScreen
+      v-if="screen === 'start'"
+      :joinInfo="joinInfo"
+      @play="onPlay"
+      @join="onJoin"
+      @cancel-join="backToStart"
+    />
+
+    <div
+      v-else-if="screen === 'connecting'"
+      class="w-full max-w-md px-4 flex flex-col items-center gap-6 text-orange-500 roboto-mono text-center"
     >
-      <Card
-        v-for="card in cardList"
-        :key="`${card.value}-${card.pair}`"
-        :value="card.value"
-        :name="card.name"
-        :sizeClass="levels[level].cardSizeClass"
-        :visible="card.visible"
-        :indexCard="card.indexCard"
-        :matched="card.matched"
-        @card-selected="flip"
-      />
-    </TransitionGroup>
+      <template v-if="mp.status === 'unreachable'">
+        <h2 class="text-xl font-bold">Couldn't reach the game server</h2>
+        <div class="flex gap-4">
+          <button class="btn-outline px-5 py-4" @click="mp.retry">Retry</button>
+          <button class="btn-outline px-5 py-4" @click="backToStart">Play single player</button>
+        </div>
+      </template>
+      <template v-else>
+        <div class="spinner" aria-hidden="true"></div>
+        <h2 class="text-xl font-bold">Connecting to game server…</h2>
+        <button class="btn-outline px-5 py-3 text-sm" @click="backToStart">Cancel</button>
+      </template>
+    </div>
 
+    <Lobby
+      v-else-if="screen === 'lobby'"
+      :room="mp.room"
+      :isHost="mp.isHost"
+      @start="mp.startGame"
+      @leave="backToStart"
+    />
 
-    <!-- <p>statusSelection: {{ statusSelection }}</p> -->
-    
-    <br />
-    <div v-if="level" class="flex gap-4 mb-10">
-      <button
-        @click="restarGame"
-        class="font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
-      >
+    <GameBoard
+      v-else-if="screen === 'single'"
+      :cards="single.cards"
+      :level="single.level"
+      @flip="single.flip"
+    />
+
+    <GameBoard
+      v-else-if="screen === 'multi'"
+      :cards="multiCards"
+      :level="mp.room.level"
+      sparkleOnMatch
+      @flip="onMultiFlip"
+    />
+
+    <div v-if="screen === 'single'" class="flex gap-4 mb-10">
+      <button class="btn-outline roboto-mono py-4 px-5" @click="single.restarGame">
         Restart Game
       </button>
-      <button
-        @click="changeLevel"
-        class="font-bold roboto-mono bg-transparent border border-orange-500 py-4 px-5 text-orange-500 rounded transition duration-300 hover:bg-orange-400 hover:text-blue-500"
-      >
+      <button class="btn-outline roboto-mono py-4 px-5" @click="backToStart">
         Change Level
       </button>
+    </div>
+
+    <div v-else-if="screen === 'multi'" class="flex flex-col items-center gap-3 mb-10 roboto-mono text-orange-500">
+      <div class="flex gap-4">
+        <button
+          v-if="mp.room.phase === 'finished' && mp.isHost"
+          class="btn-outline py-4 px-5"
+          @click="mp.playAgain"
+        >
+          Play again
+        </button>
+        <button class="btn-outline py-4 px-5" @click="backToStart">Leave</button>
+      </div>
+      <p v-if="mp.room.phase === 'finished' && !mp.isHost" class="text-sm">Waiting for the host to start a new game…</p>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, watch, computed } from "vue";
-import Card from "./components/Card.vue";
+import { ref, reactive, computed, watch } from "vue";
+import GameBoard from "./components/GameBoard.vue";
+import Lobby from "./components/Lobby.vue";
+import Scoreboard from "./components/Scoreboard.vue";
+import StartScreen from "./components/StartScreen.vue";
 import Timer from "./components/Timer.vue";
-import cardsOnDeckFull from "./assets/cardsOnDeck.json";
-import party from "party-js";
-import constants from "./assets/constants";
+import { useSinglePlayer } from "./composables/useSinglePlayer";
+import { useMultiplayer } from "./composables/useMultiplayer";
+
+const setRoomInUrl = (roomId) => {
+  const url = roomId ? `${location.pathname}?room=${roomId}` : location.pathname;
+  history.replaceState(null, "", url);
+};
 
 export default {
   name: "App",
   components: {
-    Card,
+    GameBoard,
+    Lobby,
+    Scoreboard,
+    StartScreen,
     Timer,
   },
   setup() {
-    const cardList = ref([]);
-    const cardsSelected = ref([]);
-    const statusSelection = ref("");
-    const clicks = ref(0);
-    const startStatus = ref(null);
-    const cardsOnDeck = ref([]);
-    const level = ref(null);
-    const levels = constants.LEVELS;
+    // reactive() unwraps the refs, so the template can use single.cards, mp.room, ...
+    const single = reactive(useSinglePlayer());
+    const mp = reactive(useMultiplayer());
 
-    // Shuffle the full deck and pick as many logos as the level has pairs
-    const chosenCards = () => {
-      cardList.value = [];
-      cardsOnDeck.value = [...cardsOnDeckFull]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, levels[level.value].pairs);
+    const mode = ref(null); // null (start screen) | "single" | "multi"
+    const joinInfo = ref(null); // room summary when opened from a room link
+    const loadingRoomInfo = ref(false);
+    let nickname = "";
 
-      cardsOnDeck.value.forEach((card, index) => {
-        cardList.value.push({
-          value: card.logo,
-          name: card.name,
-          visible: true,
-          indexCard: index,
-          matched: false,
-          pair: "a",
-        });
-
-        cardList.value.push({
-          value: card.logo,
-          name: card.name,
-          visible: true,
-          indexCard: cardsOnDeck.value.length + index + 1,
-          matched: false,
-          pair: "b",
-        });
-      });
-    }
-
-
-    const GameStatus = computed(() => {
-      if (cardList.value.length && cardList.value.every((item) => item.matched === true)) {
-        startStatus.value = constants.TIMER_STOP;
-        return "YOU Win!";
-      }
-      return;
+    const screen = computed(() => {
+      if (mode.value === "single") return "single";
+      if (mp.room) return mp.room.phase === "lobby" ? "lobby" : "multi";
+      if (mode.value === "multi" || loadingRoomInfo.value) return "connecting";
+      return "start";
     });
 
-    const remainingPairs = computed(() => {
-      return cardList.value.filter((card) => card.matched === false).length / 2;
+    const winText = computed(() => {
+      if (screen.value === "single") return single.GameStatus;
+      if (screen.value !== "multi" || mp.room.phase !== "finished") return null;
+      const { winners, you, players } = mp.room;
+      if (winners.length > 1) return "Tie!";
+      if (winners[0] === you) return "You win!";
+      const winner = players.find((p) => p.seat === winners[0]);
+      return winner ? `${winner.name} wins!` : null;
     });
 
-    const moves = computed(() => {
-      return Math.floor(clicks.value / 2);
-    });
-
-    const pairsMatched = computed(() => {
-      return cardsOnDeck.value.length - remainingPairs.value;
-    });
-
-    let startGameTimeout = null;
-
-    const restarGame = () => {
-      clicks.value = 0;
-      cardsSelected.value = [];
-      startStatus.value = constants.TIMER_RESET;
-
-      chosenCards();
-      console.log("cardsOnDeck.value", cardsOnDeck.value);       
-
-      cardList.value = cardList.value.map((card, index) => {
-        return {
-          ...card,
-          visible: true,
-        };
-      });      
-
-      // Cancel a pending shuffle from a previous restart so it can't hide the new deck early
-      clearTimeout(startGameTimeout);
-      startGameTimeout = setTimeout(() => {
-        shuffleCards();
-        cardList.value = cardList.value.map((card, index) => {
-          return {
-            ...card,
-            matched: false,
-            indexCard: index,
-            visible: false,
-          };
-        });
-      }, 3000);
-    };
-
-    const startLevel = (key) => {
-      level.value = key;
-      restarGame();
-    };
-
-    const changeLevel = () => {
-      clearTimeout(startGameTimeout);
-      clicks.value = 0;
-      cardsSelected.value = [];
-      cardList.value = [];
-      cardsOnDeck.value = [];
-      startStatus.value = constants.TIMER_RESET;
-      level.value = null;
-    };
-
-    const shuffleCards = () => {
-      cardList.value = cardList.value.sort(() => Math.random() - 0.5);
-    };
-
-    const flip = (payload) => {
-      // Checking if has 2 cards opened to lock the possibility to open others
-      const hasCardsOpenedThatNotMatch = cardList.value.filter(item=>{
-        return item.matched === false && item.visible === true
-      })
-      
-      if (hasCardsOpenedThatNotMatch.length <= 1 && !cardList.value[payload.indexCard].visible) {
-        startStatus.value = constants.TIMER_START;
-        cardList.value[payload.indexCard].visible = true;
-        clicks.value++;
-
-        if (cardsSelected.value[0]) {
-          // Check if clicked on the exactly same card
-          if (cardsSelected.value[0].indexCard != payload.indexCard)
-            cardsSelected.value[1] = payload;
-        } else cardsSelected.value[0] = payload;
-      }      
-    };
-
-    watch(
-      cardsSelected,
-      (currentValue) => {
-        if (currentValue.length === 2) {
-          const firstCard = currentValue[0];
-          const secondCard = currentValue[1];
-
-          if (firstCard.cardValue === secondCard.cardValue) {
-            statusSelection.value = "Match!";
-            // party.confetti(firstCard.element.target);
-            // party.confetti(secondCard.element.target);
-            party.sparkles(firstCard.element.target, { shapes: ["star"] });
-            party.sparkles(secondCard.element.target, { shapes: ["star"] });
-            cardList.value[firstCard.indexCard].matched = true;
-            cardList.value[secondCard.indexCard].matched = true;
-          } else {
-            statusSelection.value = "Opps! Not yet...";
-            const deck = cardList.value;
-            setTimeout(() => {
-              // Skip if the player restarted or changed level in the meantime
-              if (cardList.value !== deck) return;
-              cardList.value[firstCard.indexCard].visible = false;
-              cardList.value[secondCard.indexCard].visible = false;
-            }, constants.TIME_SHOWING_CARD);
-          }
-
-          cardsSelected.value.length = 0;
-        }
-      },
-      { deep: true }
+    // Server cards in the shape GameBoard expects. Face-down cards have no logo yet.
+    const multiCards = computed(() =>
+      (mp.room?.cards ?? []).map((card, index) => ({
+        key: card.id,
+        value: card.logo || "",
+        name: card.name || "",
+        visible: card.faceUp,
+        matched: card.matched,
+        indexCard: index,
+      }))
     );
 
+    const loadJoinInfo = async (roomId) => {
+      loadingRoomInfo.value = true;
+      const info = await mp.fetchRoomInfo(roomId);
+      loadingRoomInfo.value = false;
+      joinInfo.value = { ...info, id: roomId };
+    };
+
+    const onPlay = ({ nickname: name, mode: chosenMode, level }) => {
+      nickname = name;
+      mode.value = chosenMode;
+      if (chosenMode === "single") single.startLevel(level);
+      else mp.createRoom(name, level);
+    };
+
+    const onJoin = ({ nickname: name }) => {
+      nickname = name;
+      mode.value = "multi";
+      mp.joinRoom(joinInfo.value.id, name);
+    };
+
+    const onMultiFlip = (payload) => {
+      if (mp.isMyTurn) mp.flip(payload.indexCard);
+    };
+
+    const backToStart = () => {
+      if (mode.value === "single") single.changeLevel();
+      mp.leave();
+      mode.value = null;
+      joinInfo.value = null;
+      loadingRoomInfo.value = false;
+      setRoomInUrl(null);
+    };
+
+    // Entered a room: put it in the URL and remember it so a reload rejoins
+    watch(
+      () => mp.room?.id,
+      (roomId) => {
+        if (!roomId) return;
+        mp.rememberRoom(nickname);
+        setRoomInUrl(roomId);
+        joinInfo.value = null;
+      }
+    );
+
+    // Couldn't join (or lost the seat): show why on the start screen
+    watch(
+      () => mp.error,
+      (error) => {
+        if (!error) return;
+        mode.value = null;
+        joinInfo.value = { error: error.code };
+      }
+    );
+
+    // Opened from a room link: rejoin if this tab was already in it (reload), otherwise ask for a nickname
+    const linkRoom = new URLSearchParams(location.search).get("room")?.toUpperCase();
+    if (linkRoom) {
+      const saved = mp.savedRoom();
+      if (saved.roomId === linkRoom && saved.nickname) {
+        nickname = saved.nickname;
+        mode.value = "multi";
+        mp.joinRoom(linkRoom, saved.nickname);
+      } else {
+        loadJoinInfo(linkRoom);
+      }
+    }
+
     return {
-      cardList,
-      flip,
-      cardsSelected,
-      statusSelection,
-      remainingPairs,
-      GameStatus,
-      shuffleCards,
-      restarGame,
-      moves,
-      clicks,
-      pairsMatched,
-      startStatus,
-      level,
-      levels,
-      startLevel,
-      changeLevel
+      single,
+      mp,
+      screen,
+      joinInfo,
+      winText,
+      multiCards,
+      onPlay,
+      onJoin,
+      onMultiFlip,
+      backToStart,
     };
   },
 };
@@ -338,4 +310,18 @@ export default {
   transform: rotate(-20deg) skew(-20deg, 10deg);
 }
 
+.spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 4px solid rgba(244, 125, 32, 0.25);
+  border-top-color: #f47d20;
+  border-radius: 9999px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
