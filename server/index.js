@@ -1,7 +1,12 @@
-// SideArm Match multiplayer server. Owns every room's state; browsers only send actions.
-// Env: PORT (default 3001), CLIENT_ORIGIN (comma-separated allowed origins; unset = allow any, for local dev)
+// SideArm Match server: serves the built game (dist/) and runs multiplayer over Socket.IO.
+// It owns every room's state; browsers only send actions.
+// Env: PORT (default 3001), CLIENT_ORIGIN (optional comma-separated origins allowed to connect
+// from another site; not needed when the game is served by this server)
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { extname, normalize, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomInt } from "node:crypto";
 import { Server } from "socket.io";
 import * as game from "./game.js";
@@ -12,8 +17,9 @@ const PREVIEW_MS = 3000;
 const SHOW_MISS_MS = 1200;
 const SEAT_KEPT_MS = 60_000;
 
-// Copy of src/assets/cardsOnDeck.json, written by `npm run collect-logos`, so this folder deploys on its own
-const deck = JSON.parse(readFileSync(new URL("./cardsOnDeck.json", import.meta.url), "utf8"));
+// One deck for both modes: the same file the single-player game imports
+const deck = JSON.parse(readFileSync(new URL("../src/assets/cardsOnDeck.json", import.meta.url), "utf8"));
+const DIST_DIR = fileURLToPath(new URL("../dist/", import.meta.url));
 
 const rooms = new Map(); // roomId -> room
 const timers = new Map(); // `${roomId}:${name}` -> timeout
@@ -37,15 +43,61 @@ const newRoomId = () => {
   return id;
 };
 
+const CONTENT_TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+};
+
+// Serves the Vite build. Unknown paths get index.html; room links are just /?room=ID.
+const serveGame = async (req, res) => {
+  const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+  let file = normalize(DIST_DIR + pathname);
+  if (!file.startsWith(DIST_DIR) || file.endsWith(sep)) file = DIST_DIR + "index.html";
+
+  let body;
+  try {
+    body = await readFile(file);
+  } catch {
+    file = DIST_DIR + "index.html";
+    try {
+      body = await readFile(file);
+    } catch {
+      res.writeHead(503, { "Content-Type": "text/plain" });
+      return res.end("The game hasn't been built yet. Run `npm run build`.\n");
+    }
+  }
+  res.writeHead(200, {
+    "Content-Type": CONTENT_TYPES[extname(file)] || "application/octet-stream",
+    // Vite puts a content hash in asset file names, so those can be cached for good
+    "Cache-Control": file.includes(`${sep}assets${sep}`) ? "public, max-age=31536000, immutable" : "no-cache",
+  });
+  res.end(req.method === "HEAD" ? undefined : body);
+};
+
 const httpServer = createServer((req, res) => {
-  // Health check for uptime monitors and for "is the server up?" in a browser
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end(`SideArm Match server is running. Rooms: ${rooms.size}\n`);
+  if (req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    return res.end(`SideArm Match server is running. Rooms: ${rooms.size}\n`);
+  }
+  // Socket.IO answers its own /socket.io/ requests before this handler runs
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405);
+    return res.end();
+  }
+  serveGame(req, res);
 });
 
-const io = new Server(httpServer, {
-  cors: { origin: ORIGINS.length ? ORIGINS : true },
-});
+// Same-origin connections (the game served above) always work; CLIENT_ORIGIN adds other sites
+const io = new Server(httpServer, ORIGINS.length ? { cors: { origin: ORIGINS } } : {});
 
 // Each browser gets its own view (its own seat as `you`)
 const broadcast = async (room) => {
@@ -153,5 +205,5 @@ io.on("connection", (socket) => {
 
 httpServer.listen(PORT, () => {
   console.log(`SideArm Match server listening on port ${PORT}`);
-  console.log(ORIGINS.length ? `Allowed origins: ${ORIGINS.join(", ")}` : "CLIENT_ORIGIN not set: allowing any origin (fine for local dev)");
+  if (ORIGINS.length) console.log(`Also allowing connections from: ${ORIGINS.join(", ")}`);
 });

@@ -1,8 +1,9 @@
 import { ref, computed } from "vue";
 import { io } from "socket.io-client";
 
-// In dev this points at the same machine as the page, so other devices on the LAN work too.
-const SERVER_URL = import.meta.env.VITE_SOCKET_URL || `${location.protocol}//${location.hostname}:3001`;
+// Same address as the page: in production the game server serves the page, and in dev
+// Vite forwards /socket.io to it. VITE_SOCKET_URL is only needed if the server lives elsewhere.
+const SERVER_URL = import.meta.env.VITE_SOCKET_URL || undefined;
 const CONNECT_TIMEOUT_MS = 60_000; // Free hosts can take this long to wake up
 const INFO_TIMEOUT_MS = 10_000;
 

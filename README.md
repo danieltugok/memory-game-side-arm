@@ -41,22 +41,28 @@ This project is MIT License.
 
 ## 🎫 Deploy
 
-This project was deployed in [VERCEL](https://vercel.com/), and you can check the final result online in [this link](https://matchgame.vercel.app/).
+The game runs on [Hostinger](https://www.hostinger.com/) as a Node.js web app. It is deployed from this repo, and every push to `main` redeploys it. A single Node server serves the game and runs multiplayer. See [server/README.md](server/README.md) for the settings.
 
-## 🏍️ Run the Project 
+## 🏍️ Run the Project
 
 ```shell
-
-//install Dependencies
+# install dependencies
 npm install
-or
-yarn
 
-//Run project
-$npm run dev
-or
-$yarn dev
+# single player only
+npm run dev
 
+# with multiplayer: run both, in two terminals
+npm run server   # game server on :3001
+npm run dev      # game on :5173 (Vite forwards multiplayer traffic to :3001)
+
+# run it like production: one server for the page and multiplayer
+npm run build && npm start   # http://localhost:3001
+
+# game rule tests
+npm test
 ```
+
+For multiplayer, open the game in two browser windows. Each tab counts as a separate player.
 
 ❤️

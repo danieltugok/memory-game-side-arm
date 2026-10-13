@@ -1,17 +1,5 @@
 {
-  "name": "sidearm-match-server",
   "private": true,
-  "version": "0.0.0",
-  "description": "Socket.IO game server for SideArm Match multiplayer",
-  "type": "module",
-  "engines": {
-    "node": ">=18"
-  },
-  "scripts": {
-    "start": "node index.js",
-    "test": "node --test"
-  },
-  "dependencies": {
-    "socket.io": "^4.8.4"
-  }
+  "description": "Marks server/*.js as ES modules. Dependencies live in the root package.json.",
+  "type": "module"
 }
