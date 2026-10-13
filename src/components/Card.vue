@@ -11,7 +11,19 @@
         class="flip-card-front shadow-md border-4 rounded p-2 bg-white text-black w-full h-full absolute rotate-y-180 backface-hidden"
         :class="matched?'opacity-10 border-green-500':''"
       >
-        <img :src="`https://clients.sidearmsports.com/sidearm_files/logos/${value}`" alt="">
+        <img
+          v-if="!imageFailed"
+          :src="value"
+          :alt="name"
+          class="w-full h-full object-contain"
+          @error="imageFailed = true"
+        >
+        <div
+          v-else
+          class="w-full h-full flex items-center justify-center text-xs md:text-sm font-bold leading-tight"
+        >
+          {{ name }}
+        </div>
       </div>
       <div
         class="flip-card-back p-4 bg-green-500 shadow-md cursor-pointer rounded text-white w-full h-full absolute backface-hidden"
@@ -23,6 +35,7 @@
 </template>
 
 <script>
+import { ref } from 'vue'
 import constants from '../assets/constants'
 
 export default {
@@ -34,6 +47,10 @@ export default {
     value: {
       type: String,
       required: true,
+    },
+    name: {
+      type: String,
+      default: '',
     },
     visible: {
       type: Boolean,
@@ -47,6 +64,7 @@ export default {
 
   setup(props, context) { 
     const durationFlipCard = constants.TIME_FLIPPING_CARD
+    const imageFailed = ref(false)
 
     const cardSelected = (ele) => {
       context.emit("card-selected", {
@@ -58,7 +76,8 @@ export default {
 
     return {
       cardSelected,
-      durationFlipCard
+      durationFlipCard,
+      imageFailed
     };
   },
 };

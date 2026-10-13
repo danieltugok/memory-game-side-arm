@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "collect-logos": "node scripts/collect-logos.mjs"
   },
   "dependencies": {
     "party-js": "^2.1.3",

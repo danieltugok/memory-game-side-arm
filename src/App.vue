@@ -61,6 +61,7 @@
         v-for="card in cardList"
         :key="`${card.value}-${card.pair}`"
         :value="card.value"
+        :name="card.name"
         :visible="card.visible"
         :indexCard="card.indexCard"
         :matched="card.matched"
@@ -103,14 +104,15 @@ export default {
     const startStatus = ref(null);
     const cardsOnDeck = ref([]);
 
-    // Shuffle the initial cards and selecting only 12 cards to start the game
+    // Shuffle the full deck and pick 12 logos to start the game
     const chosenCards = () => {
       cardList.value = [];
-      cardsOnDeck.value = cardsOnDeckFull.sort(() => Math.random() - 0.5).slice(0, 12);
+      cardsOnDeck.value = [...cardsOnDeckFull].sort(() => Math.random() - 0.5).slice(0, 12);
 
       cardsOnDeck.value.forEach((card, index) => {
         cardList.value.push({
-          value: card,
+          value: card.logo,
+          name: card.name,
           visible: true,
           indexCard: index,
           matched: false,
@@ -118,7 +120,8 @@ export default {
         });
 
         cardList.value.push({
-          value: card,
+          value: card.logo,
+          name: card.name,
           visible: true,
           indexCard: cardsOnDeck.value.length + index + 1,
           matched: false,
@@ -148,7 +151,9 @@ export default {
       return cardsOnDeck.value.length - remainingPairs.value;
     });
 
-    const restarGame = () => {      
+    let startGameTimeout = null;
+
+    const restarGame = () => {
       clicks.value = 0;
       cardsSelected.value = [];
       startStatus.value = constants.TIMER_RESET;
@@ -163,7 +168,9 @@ export default {
         };
       });      
 
-      setTimeout(() => {
+      // Cancel a pending shuffle from a previous restart so it can't hide the new deck early
+      clearTimeout(startGameTimeout);
+      startGameTimeout = setTimeout(() => {
         shuffleCards();
         cardList.value = cardList.value.map((card, index) => {
           return {
@@ -249,10 +256,15 @@ export default {
 </script>
 
 <style>
-.shuffle-enter-active,
-.shuffle-leave-active,
-.shuffle-move {
-  transition: all 0.6s ease;
+/* Only animate the shuffle. Vue also puts the move class on leaving cards, so
+   any transition on them keeps the old deck in the grid next to the new one
+   on restart. Leaving cards get no transition and are hidden right away. */
+.shuffle-move:not(.shuffle-leave-active) {
+  transition: transform 0.6s ease;
+}
+
+.shuffle-leave-active {
+  display: none;
 }
 
 .title {
