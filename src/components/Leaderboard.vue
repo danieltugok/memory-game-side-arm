@@ -10,14 +10,31 @@
       aria-labelledby="leaderboard-title"
       class="confirm-dialog w-full max-w-md rounded-2xl border border-orange-500 p-6 text-orange-500 roboto-mono flex flex-col gap-4"
     >
-      <h2 id="leaderboard-title" class="text-xl font-bold">{{ levelLabel }} leaderboard</h2>
-      <p class="text-sm text-white">
+      <h2 id="leaderboard-title" class="text-xl font-bold">Leaderboard</h2>
+      <p v-if="result" class="text-sm text-white">
         Your time: <strong>{{ formatTime(result.timeMs) }}</strong> · {{ result.moves }} moves
+        <span v-if="result.error"><br />Couldn't save your score this time.</span>
       </p>
 
-      <p v-if="result.error" class="text-sm text-white">Couldn't save your score this time.</p>
-      <template v-else>
-        <table class="w-full text-sm text-left">
+      <div role="tablist" class="grid grid-cols-3 gap-2">
+        <button
+          v-for="(option, key) in levels"
+          :key="key"
+          role="tab"
+          :aria-selected="active === key"
+          class="btn-outline px-2 py-1 text-sm"
+          :class="{ confirm: active === key }"
+          @click="show(key)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+
+      <div role="tabpanel" class="min-h-[18rem]">
+        <p v-if="tabs[active] === 'loading'" class="text-sm text-white">Loading…</p>
+        <p v-else-if="tabs[active] === 'error'" class="text-sm text-white">Couldn't load the scores.</p>
+        <p v-else-if="!tabs[active].length" class="text-sm text-white">No scores yet. Be the first!</p>
+        <table v-else class="w-full text-sm text-left">
           <thead>
             <tr class="border-b border-orange-500">
               <th class="py-1">#</th>
@@ -28,9 +45,9 @@
           </thead>
           <tbody class="text-white">
             <tr
-              v-for="(score, index) in result.scores"
+              v-for="(score, index) in tabs[active]"
               :key="score.id"
-              :class="{ 'bg-orange-500 text-blue-500 font-bold': score.id === result.id }"
+              :class="{ 'bg-orange-500 text-blue-500 font-bold': isYours(score) }"
             >
               <td class="py-1 px-1">{{ index + 1 }}</td>
               <td class="py-1 break-all">{{ score.name }}</td>
@@ -39,34 +56,58 @@
             </tr>
           </tbody>
         </table>
-        <p v-if="!result.scores.some((s) => s.id === result.id)" class="text-sm text-white">
+        <p v-if="result?.scores && active === result.level && !tabs[active].some(isYours)" class="text-sm text-white mt-2">
           Not in the top 10 yet. Try again!
         </p>
-      </template>
+      </div>
 
-      <div class="flex justify-end gap-3 mt-2">
-        <button class="btn-outline px-4 py-2" @click="$emit('close')">Close</button>
-        <button ref="againButton" class="btn-outline confirm px-4 py-2" @click="$emit('play-again')">Play again</button>
+      <div class="flex justify-end gap-3">
+        <button ref="closeButton" class="btn-outline px-4 py-2" @click="$emit('close')">Close</button>
+        <button v-if="result" ref="againButton" class="btn-outline confirm px-4 py-2" @click="$emit('play-again')">
+          Play again
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
+import constants from "../assets/constants";
 
-// Shown after a single-player win: the player's result and the level's top 10.
-// result: { id, timeMs, moves, scores: [{ id, name, timeMs, moves }] } or { timeMs, moves, error: true }
+// Top 10 per level, one tab each. After a single-player win, `result` is the player's score
+// ({ level, timeMs, moves, id, scores } or { level, timeMs, moves, error: true }): its tab opens first
+// with the player's row highlighted.
 export default {
   name: "Leaderboard",
   props: {
-    result: { type: Object, required: true },
-    levelLabel: { type: String, required: true },
+    result: { type: Object, default: null },
+    level: { type: String, default: "easy" },
   },
   emits: ["close", "play-again"],
-  setup() {
+  setup(props) {
+    const closeButton = ref(null);
     const againButton = ref(null);
-    onMounted(() => againButton.value?.focus());
+    const active = ref(props.result?.level ?? props.level);
+    const tabs = reactive({}); // level -> scores array | "loading" | "error"
+    if (props.result?.scores) tabs[props.result.level] = props.result.scores;
+
+    const show = async (level) => {
+      active.value = level;
+      if (Array.isArray(tabs[level]) || tabs[level] === "loading") return;
+      tabs[level] = "loading";
+      try {
+        const res = await fetch(`/api/scores?level=${level}`, { signal: AbortSignal.timeout(10_000) });
+        tabs[level] = res.ok ? (await res.json()).scores : "error";
+      } catch {
+        tabs[level] = "error";
+      }
+    };
+
+    show(active.value);
+    onMounted(() => (againButton.value ?? closeButton.value)?.focus());
+
+    const isYours = (score) => score.id === props.result?.id;
 
     // 83456 -> "1:23.4"
     const formatTime = (ms) => {
@@ -75,7 +116,7 @@ export default {
       return `${Math.floor(tenths / 600)}:${String(sec).padStart(2, "0")}.${tenths % 10}`;
     };
 
-    return { againButton, formatTime };
+    return { levels: constants.LEVELS, active, tabs, show, isYours, formatTime, closeButton, againButton };
   },
 };
 </script>

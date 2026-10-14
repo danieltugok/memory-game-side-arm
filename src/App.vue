@@ -80,10 +80,11 @@
     />
 
     <Leaderboard
-      v-if="screen === 'single' && single.leaderboard"
-      :result="single.leaderboard"
-      :levelLabel="single.levels[single.level].label"
-      @close="single.leaderboard = null"
+      v-if="(screen === 'single' && single.leaderboard) || showLeaderboard"
+      :key="single.leaderboard ? 'result' : 'browse'"
+      :result="screen === 'single' ? single.leaderboard : null"
+      :level="single.level || 'easy'"
+      @close="closeLeaderboard"
       @play-again="single.restarGame"
     />
 
@@ -165,6 +166,8 @@
       </div>
       <p v-if="mp.room.phase === 'finished' && !mp.isHost" class="text-sm">Waiting for the host to start a new game…</p>
     </div>
+
+    <button class="btn-outline roboto-mono py-3 px-5 mt-4" @click="showLeaderboard = true">Leaderboard</button>
   </div>
 </template>
 
@@ -205,6 +208,7 @@ export default {
     const joinInfo = ref(null); // room summary when opened from a room link
     const loadingRoomInfo = ref(false);
     const confirmRestart = ref(false);
+    const showLeaderboard = ref(false);
     const trophySrc = "./trophy.json";
     let nickname = "";
 
@@ -273,6 +277,11 @@ export default {
       }
     );
 
+    const closeLeaderboard = () => {
+      showLeaderboard.value = false;
+      single.leaderboard = null;
+    };
+
     const onMultiFlip = (payload) => {
       if (mp.isMyTurn) mp.flip(payload.indexCard);
     };
@@ -334,6 +343,8 @@ export default {
       confirmRestart,
       restartMulti,
       trophySrc,
+      showLeaderboard,
+      closeLeaderboard,
     };
   },
 };

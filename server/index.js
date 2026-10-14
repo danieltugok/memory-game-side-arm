@@ -115,8 +115,24 @@ const postScore = async (req, res) => {
   }
 };
 
+// GET /api/scores?level=easy -> { scores: top 10 of that level }
+const getScores = async (res, level) => {
+  if (!scores.enabled()) return sendJson(res, 503, { error: "Scores are off" });
+  if (!scores.isLevel(level)) return sendJson(res, 400, { error: "Unknown level" });
+  try {
+    sendJson(res, 200, { scores: await scores.topScores(level) });
+  } catch (err) {
+    console.error("Scores: read failed:", err.message);
+    sendJson(res, 503, { error: "Scores are unavailable" });
+  }
+};
+
 const httpServer = createServer((req, res) => {
-  if (req.url === "/api/scores" && req.method === "POST") return postScore(req, res);
+  const url = new URL(req.url, "http://localhost");
+  if (url.pathname === "/api/scores") {
+    if (req.method === "POST") return postScore(req, res);
+    if (req.method === "GET") return getScores(res, url.searchParams.get("level"));
+  }
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     return res.end(`SideArm Match server is running. Rooms: ${rooms.size}\n`);

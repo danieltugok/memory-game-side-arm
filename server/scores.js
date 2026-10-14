@@ -11,7 +11,7 @@ const MAX_TIME_MS = 24 * 60 * 60 * 1000;
 export const validateScore = (score) => {
   const { name, level, timeMs, moves } = score ?? {};
   const cleanName = typeof name === "string" ? name.trim() : "";
-  const pairs = Object.hasOwn(LEVEL_PAIRS, level) && LEVEL_PAIRS[level];
+  const pairs = isLevel(level) && LEVEL_PAIRS[level];
   if (!cleanName || cleanName.length > NAME_MAX_LENGTH || !pairs) return null;
   // Every pair takes at least one move, and the clock starts at the first flip
   if (!Number.isInteger(moves) || moves < pairs || moves > pairs * 100) return null;
@@ -48,17 +48,25 @@ ready?.then(
 
 export const enabled = () => Boolean(pool);
 
-// Saves the score and returns its id with the level's top 10 (fastest first, fewer moves breaks ties)
+export const isLevel = (level) => Object.hasOwn(LEVEL_PAIRS, level);
+
+// The level's top 10: fastest first, fewer moves breaks ties
+export const topScores = async (level) => {
+  await ready;
+  const [scores] = await pool.execute(
+    `SELECT id, name, time_ms AS timeMs, moves FROM scores WHERE level = ?
+     ORDER BY time_ms, moves, id LIMIT ${TOP}`,
+    [level]
+  );
+  return scores;
+};
+
+// Saves the score and returns its id with the level's top 10
 export const saveScore = async ({ name, level, timeMs, moves }) => {
   await ready;
   const [result] = await pool.execute(
     "INSERT INTO scores (name, level, time_ms, moves) VALUES (?, ?, ?, ?)",
     [name, level, timeMs, moves]
   );
-  const [scores] = await pool.execute(
-    `SELECT id, name, time_ms AS timeMs, moves FROM scores WHERE level = ?
-     ORDER BY time_ms, moves, id LIMIT ${TOP}`,
-    [level]
-  );
-  return { id: result.insertId, scores };
+  return { id: result.insertId, scores: await topScores(level) };
 };
