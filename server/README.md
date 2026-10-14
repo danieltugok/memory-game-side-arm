@@ -40,6 +40,9 @@ npm run build && npm start   # http://localhost:3001
 | `PORT` | `3001` | The port the server listens on. Hosts usually set it. |
 | `CLIENT_ORIGIN` | (not set) | Only needed if the page is served from a different site, for example `https://matchgame.vercel.app`. It's a comma-separated list of the sites allowed to connect. |
 | `VITE_SOCKET_URL` | (not set) | Build-time setting for the page. Only needed if the server runs at a different address from the page. |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | (not set) | MySQL database for the single-player leaderboard. Without `DB_HOST`, the game works but scores aren't saved. The server creates the `scores` table on startup. |
+
+Locally, put these in a `.env` file at the repo root; `npm run server` loads it. It's in `.gitignore`, so the password never reaches GitHub.
 
 ## Deploy as a Hostinger Node.js Web app
 
@@ -54,12 +57,13 @@ In hPanel, go to **Sites → Criar site / Add website → Web app Node.js** and 
 | Output directory | leave empty |
 | Entry file | `server/index.js` |
 | Node.js version | 22 |
-| Environment variables | none |
+| Environment variables | `DB_HOST=localhost`, `DB_PORT=3306`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (from **Databases → MySQL Databases**) |
 
 After the deploy finishes:
 
 - `https://<your-app>.hostingersite.com/health` should show "SideArm Match server is running."
 - `https://<your-app>.hostingersite.com` opens the game.
+- **Runtime logs** show "Scores: connected to the database". If they show "database unavailable", check the `DB_*` variables.
 
 Every push to `main` redeploys the app. The server's output appears under **Runtime logs**.
 

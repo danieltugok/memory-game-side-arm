@@ -1,7 +1,8 @@
 // SideArm Match server: serves the built game (dist/) and runs multiplayer over Socket.IO.
 // It owns every room's state; browsers only send actions.
 // Env: PORT (default 3001), CLIENT_ORIGIN (optional comma-separated origins allowed to connect
-// from another site; not needed when the game is served by this server)
+// from another site; not needed when the game is served by this server), DB_* (see scores.js).
+// Locally they can live in a .env file next to package.json (`npm run server` loads it).
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -10,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { randomInt } from "node:crypto";
 import { Server } from "socket.io";
 import * as game from "./game.js";
+import * as scores from "./scores.js";
 
 const PORT = Number(process.env.PORT) || 3001;
 const ORIGINS = (process.env.CLIENT_ORIGIN || "").split(",").map((o) => o.trim()).filter(Boolean);
@@ -87,7 +89,34 @@ const serveGame = async (req, res) => {
   res.end(req.method === "HEAD" ? undefined : body);
 };
 
+const sendJson = (res, status, data) => {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.end(JSON.stringify(data));
+};
+
+// POST /api/scores { name, level, timeMs, moves } -> { id, scores: top 10 of that level }
+const postScore = async (req, res) => {
+  if (!scores.enabled()) return sendJson(res, 503, { error: "Scores are off" });
+  let body = "";
+  for await (const chunk of req) {
+    body += chunk;
+    if (body.length > 1024) return sendJson(res, 413, { error: "Too large" });
+  }
+  let score;
+  try {
+    score = scores.validateScore(JSON.parse(body));
+  } catch {}
+  if (!score) return sendJson(res, 400, { error: "Invalid score" });
+  try {
+    sendJson(res, 200, await scores.saveScore(score));
+  } catch (err) {
+    console.error("Scores: save failed:", err.message);
+    sendJson(res, 503, { error: "Scores are unavailable" });
+  }
+};
+
 const httpServer = createServer((req, res) => {
+  if (req.url === "/api/scores" && req.method === "POST") return postScore(req, res);
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     return res.end(`SideArm Match server is running. Rooms: ${rooms.size}\n`);

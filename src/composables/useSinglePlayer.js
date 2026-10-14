@@ -3,6 +3,8 @@ import cardsOnDeckFull from "../assets/cardsOnDeck.json";
 import party from "party-js";
 import constants from "../assets/constants";
 
+const TROPHY_MS = 2500;
+
 // Single-player game: all state lives in this browser.
 // `indexCard` must always equal the card's position in cardList (flip() indexes by it).
 export function useSinglePlayer() {
@@ -14,6 +16,9 @@ export function useSinglePlayer() {
   const cardsOnDeck = ref([]);
   const level = ref(null);
   const levels = constants.LEVELS;
+  const nickname = ref("");
+  const leaderboard = ref(null); // after a win: { id, timeMs, moves, scores } or { error: true }
+  let startedAt = null; // first flip, like the Timer
 
   // Shuffle the full deck and pick as many logos as the level has pairs
   const chosenCards = () => {
@@ -72,6 +77,8 @@ export function useSinglePlayer() {
 
   const restarGame = () => {
     clicks.value = 0;
+    startedAt = null;
+    leaderboard.value = null;
     cardsSelected.value = [];
     startStatus.value = constants.TIMER_RESET;
 
@@ -99,14 +106,17 @@ export function useSinglePlayer() {
     }, constants.BEGGINING_TIME_SHOWING_CARD);
   };
 
-  const startLevel = (key) => {
+  const startLevel = (key, name) => {
     level.value = key;
+    nickname.value = name;
     restarGame();
   };
 
   const changeLevel = () => {
     clearTimeout(startGameTimeout);
     clicks.value = 0;
+    startedAt = null;
+    leaderboard.value = null;
     cardsSelected.value = [];
     cardList.value = [];
     cardsOnDeck.value = [];
@@ -126,6 +136,7 @@ export function useSinglePlayer() {
 
     if (hasCardsOpenedThatNotMatch.length <= 1 && !cardList.value[payload.indexCard].visible) {
       startStatus.value = constants.TIMER_START;
+      startedAt ??= Date.now();
       cardList.value[payload.indexCard].visible = true;
       clicks.value++;
 
@@ -167,6 +178,26 @@ export function useSinglePlayer() {
     { deep: true }
   );
 
+  // Save the record on a win and keep the level's top 10 to show
+  watch(GameStatus, async (won) => {
+    if (!won) return;
+    const deck = cardList.value;
+    const score = { name: nickname.value, level: level.value, timeMs: Date.now() - startedAt, moves: moves.value };
+    const save = fetch("/api/scores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(score),
+      // A server that never answers must not keep the leaderboard from opening
+      signal: AbortSignal.timeout(10_000),
+    })
+      .then((res) => (res.ok ? res.json() : { error: true }))
+      .catch(() => ({ error: true }));
+    // Let the trophy animation finish before the leaderboard covers it
+    const [result] = await Promise.all([save, new Promise((done) => setTimeout(done, TROPHY_MS))]);
+    // Skip if the player restarted or changed level in the meantime
+    if (cardList.value === deck) leaderboard.value = { ...score, ...result };
+  });
+
   return {
     cards,
     level,
@@ -180,5 +211,6 @@ export function useSinglePlayer() {
     pairsMatched,
     moves,
     startStatus,
+    leaderboard,
   };
 }

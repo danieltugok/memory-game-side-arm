@@ -79,6 +79,14 @@
       @cancel="confirmRestart = false"
     />
 
+    <Leaderboard
+      v-if="screen === 'single' && single.leaderboard"
+      :result="single.leaderboard"
+      :levelLabel="single.levels[single.level].label"
+      @close="single.leaderboard = null"
+      @play-again="single.restarGame"
+    />
+
     <StartScreen
       v-if="screen === 'start'"
       :joinInfo="joinInfo"
@@ -164,6 +172,7 @@
 import { ref, reactive, computed, watch } from "vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import GameBoard from "./components/GameBoard.vue";
+import Leaderboard from "./components/Leaderboard.vue";
 import Lobby from "./components/Lobby.vue";
 import Scoreboard from "./components/Scoreboard.vue";
 import StartScreen from "./components/StartScreen.vue";
@@ -181,6 +190,7 @@ export default {
   components: {
     ConfirmDialog,
     GameBoard,
+    Leaderboard,
     Lobby,
     Scoreboard,
     StartScreen,
@@ -237,7 +247,7 @@ export default {
     const onPlay = ({ nickname: name, mode: chosenMode, level }) => {
       nickname = name;
       mode.value = chosenMode;
-      if (chosenMode === "single") single.startLevel(level);
+      if (chosenMode === "single") single.startLevel(level, name);
       else mp.createRoom(name, level);
     };
 

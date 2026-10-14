@@ -7,12 +7,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "collect-logos": "node scripts/collect-logos.mjs",
-    "server": "node server/index.js",
+    "server": "node --env-file-if-exists=.env server/index.js",
     "start": "node server/index.js",
-    "test": "node --test server/game.test.js"
+    "test": "node --test server/game.test.js server/scores.test.js"
   },
   "dependencies": {
     "@lottiefiles/lottie-player": "2.0.12",
+    "mysql2": "^3.24.6",
     "party-js": "^2.1.3",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",

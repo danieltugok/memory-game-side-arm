@@ -16,10 +16,10 @@ npm run preview  # serve the production build
 npm run collect-logos  # rebuild src/assets/cardsOnDeck.json from scripts/schools.txt
 npm run server   # game server on :3001; run it next to `npm run dev` (Vite forwards /socket.io to it)
 npm start        # production: serves dist/ and multiplayer on one port (run `npm run build` first)
-npm test         # game rule tests (node:test); one test: node --test --test-name-pattern="<name>" server/game.test.js
+npm test         # server tests (node:test); one test: node --test --test-name-pattern="<name>" server/game.test.js
 ```
 
-The server's game rules have tests. The Vue app has no tests, and the repo has no linter or formatter.
+The server's game rules and score validation have tests. The Vue app has no tests, and the repo has no linter or formatter.
 
 The project `.npmrc` sets the public npm registry. Keep it: the user-level `~/.npmrc` points to a private CodeArtifact registry, and without the override `npm install` asks for a login.
 
@@ -36,6 +36,7 @@ The project `.npmrc` sets the public npm registry. Keep it: the user-level `~/.n
 - **Derived state**: `moves = floor(clicks / 2)`. `GameStatus` is a computed that returns "YOU Win!" when every card is matched. It also sets the timer to stop as a side effect.
 - **Timer**: `Timer.vue` uses the Options API. The parent drives it only through the `startStatus` prop (`start`/`stop`/`reset`, defined in `src/assets/constants.js`), and it reacts in a watcher.
 - **Constants**: timing values are in `src/assets/constants.js`. `TIME_FLIPPING_CARD` is interpolated into a Tailwind class (`duration-${...}`). That works only because the matching `duration-700` class is generated. If you change the value, use another Tailwind duration that exists, or safelist it.
+- **Leaderboard**: the composable times the game from the first flip and, on a win, posts `{ name, level, timeMs, moves }` to `POST /api/scores`. `server/scores.js` validates it, saves it to MySQL and returns the level's top 10 (fastest time, then fewer moves). `Leaderboard.vue` shows it after the trophy animation. The browser reports the score, so the server only rejects impossible ones. Without `DB_HOST`, the endpoint answers 503 and the dialog says the score wasn't saved.
 - **Win animation**: a `<lottie-player>` web component plays `public/trophy.json` in both modes. The component comes from the npm package `@lottiefiles/lottie-player`, pinned to an exact version. `src/main.js` loads it in the background, and `vite.config.js` registers it as a custom element. Keep its `:src` a binding: with only static attributes, Vue's production build copies the first trophy element for later wins, the copy loses `src` and `autoplay` (Vue sets them as properties), and every trophy after the first stays blank. This only happens in production builds.
 
 ### Multiplayer
@@ -47,7 +48,7 @@ The project `.npmrc` sets the public npm registry. Keep it: the user-level `~/.n
 - **Disconnects.** A disconnect only skips that player's turns. The game ends early only when a seat is actually removed, either through Leave or after the 60-second hold. Otherwise a reload would end the game.
 - **One origin.** In production, `server/index.js` serves the Vite build (`dist/`) and Socket.IO from one port, with a health check at `/health`. The client connects to the address the page came from. In dev, `vite.config.js` forwards `/socket.io` to `:3001`, or to `SERVER_PORT` when that is set (for example `PORT=3002 npm run server` together with `SERVER_PORT=3002 npm run dev`). `VITE_SOCKET_URL` and `CLIENT_ORIGIN` are only needed if the page and the server are ever hosted separately.
 - **Packages.** The server's dependency (`socket.io`) is in the root `package.json`, because Hostinger installs from the root. `server/package.json` only sets `"type": "module"`. The server reads the same deck file as the client (`src/assets/cardsOnDeck.json`). `LEVEL_PAIRS` in `game.js` must match `LEVELS` in `constants.js`.
-- **Deployment.** The whole game is a Hostinger Node.js Web app: root directory `./`, build command `build`, entry file `server/index.js`. The settings are in `server/README.md`. Vercel is no longer used. The server keeps its own `server/.npmrc` and `package-lock.json`.
+- **Deployment.** The whole game is a Hostinger Node.js Web app: root directory `./`, build command `build`, entry file `server/index.js`. The settings are in `server/README.md`. Vercel is no longer used. Database settings (`DB_*`) are set in hPanel and, locally, in a gitignored `.env` that `npm run server` loads.
 
 ## Styling
 
