@@ -12,6 +12,7 @@
     "test": "node --test server/game.test.js"
   },
   "dependencies": {
+    "@lottiefiles/lottie-player": "2.0.12",
     "party-js": "^2.1.3",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",

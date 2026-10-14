@@ -12,7 +12,7 @@ export default defineConfig({
   },
   plugins: [
     vue({
-      // <lottie-player> (trophy animation) is a web component loaded in index.html
+      // <lottie-player> (win trophy) is a web component registered in src/main.js, not a Vue component
       template: { compilerOptions: { isCustomElement: (tag) => tag === 'lottie-player' } },
     }),
   ]

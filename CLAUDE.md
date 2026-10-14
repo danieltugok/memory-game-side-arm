@@ -36,7 +36,7 @@ The project `.npmrc` sets the public npm registry. Keep it: the user-level `~/.n
 - **Derived state**: `moves = floor(clicks / 2)`. `GameStatus` is a computed that returns "YOU Win!" when every card is matched. It also sets the timer to stop as a side effect.
 - **Timer**: `Timer.vue` uses the Options API. The parent drives it only through the `startStatus` prop (`start`/`stop`/`reset`, defined in `src/assets/constants.js`), and it reacts in a watcher.
 - **Constants**: timing values are in `src/assets/constants.js`. `TIME_FLIPPING_CARD` is interpolated into a Tailwind class (`duration-${...}`). That works only because the matching `duration-700` class is generated. If you change the value, use another Tailwind duration that exists, or safelist it.
-- **Win animation**: a `<lottie-player>` web component plays `public/trophy.json` in both modes. The component is loaded from unpkg by a `<script>` tag in `index.html`, not from npm, and `vite.config.js` registers it as a custom element.
+- **Win animation**: a `<lottie-player>` web component plays `public/trophy.json` in both modes. The component comes from the npm package `@lottiefiles/lottie-player`, pinned to an exact version. `src/main.js` loads it in the background, and `vite.config.js` registers it as a custom element. Keep its `:src` a binding: with only static attributes, Vue's production build copies the first trophy element for later wins, the copy loses `src` and `autoplay` (Vue sets them as properties), and every trophy after the first stays blank. This only happens in production builds.
 
 ### Multiplayer
 

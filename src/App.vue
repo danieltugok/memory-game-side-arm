@@ -42,8 +42,10 @@
       v-if="winText"
       class="w-[32rem] absolute z-50 top-[9%]"
     >
+      <!-- :src must stay a binding. With only static attributes, Vue's production build copies the
+           first trophy element for later wins, and the copy loses src/autoplay (set as properties). -->
       <lottie-player
-        src="./trophy.json"
+        :src="trophySrc"
         background="transparent"
         speed="1"
         style="width: 512px; height: 512px;"
@@ -193,6 +195,7 @@ export default {
     const joinInfo = ref(null); // room summary when opened from a room link
     const loadingRoomInfo = ref(false);
     const confirmRestart = ref(false);
+    const trophySrc = "./trophy.json";
     let nickname = "";
 
     const screen = computed(() => {
@@ -320,6 +323,7 @@ export default {
       backToStart,
       confirmRestart,
       restartMulti,
+      trophySrc,
     };
   },
 };

@@ -67,6 +67,10 @@ const serveGame = async (req, res) => {
   try {
     body = await readFile(file);
   } catch {
+    if (extname(pathname)) {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      return res.end("Not found\n");
+    }
     file = DIST_DIR + "index.html";
     try {
       body = await readFile(file);
