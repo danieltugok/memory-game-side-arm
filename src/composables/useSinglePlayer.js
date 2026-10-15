@@ -155,7 +155,8 @@ export function useSinglePlayer() {
         const firstCard = currentValue[0];
         const secondCard = currentValue[1];
 
-        if (firstCard.cardValue === secondCard.cardValue) {
+        // Compare the real logos: the board hides a face-down card's value, so the click payload has none
+        if (cardList.value[firstCard.indexCard].value === cardList.value[secondCard.indexCard].value) {
           statusSelection.value = "Match!";
           party.sparkles(firstCard.element.target, { shapes: ["star"] });
           party.sparkles(secondCard.element.target, { shapes: ["star"] });

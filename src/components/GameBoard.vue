@@ -9,8 +9,8 @@
     <Card
       v-for="card in cards"
       :key="card.key"
-      :value="card.value"
-      :name="card.name"
+      :value="card.visible || card.matched ? card.value : ''"
+      :name="card.visible || card.matched ? card.name : ''"
       :sizeClass="levels[level].cardSizeClass"
       :visible="card.visible"
       :indexCard="card.indexCard"
