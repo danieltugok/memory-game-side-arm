@@ -41,7 +41,7 @@ This project is MIT License.
 
 ## 🎫 Deploy
 
-The game runs on [Hostinger](https://www.hostinger.com/) as a Node.js web app. It is deployed from this repo, and every push to `main` redeploys it. A single Node server serves the game and runs multiplayer. See [server/README.md](server/README.md) for the settings.
+The game runs on [Hostinger](https://www.hostinger.com/) as a Node.js web app. It is deployed from this repo, and every push to `main` redeploys it. A single Node server serves the game and runs every game, single player included. See [server/README.md](server/README.md) for the settings.
 
 ## 🏍️ Run the Project
 
@@ -49,10 +49,7 @@ The game runs on [Hostinger](https://www.hostinger.com/) as a Node.js web app. I
 # install dependencies
 npm install
 
-# single player only
-npm run dev
-
-# with multiplayer: run both, in two terminals
+# run both, in two terminals (single player is played on the server too)
 npm run server   # game server on :3001
 npm run dev      # game on :5173 (Vite forwards multiplayer traffic to :3001)
 

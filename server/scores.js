@@ -6,8 +6,7 @@ import { LEVEL_PAIRS, NAME_MAX_LENGTH } from "./game.js";
 const TOP = 10;
 const MAX_TIME_MS = 24 * 60 * 60 * 1000;
 
-// shortcut: the browser reports time and moves, so a hand-made request can fake a score.
-// This only rejects impossible ones; stopping cheaters means running single player on the server.
+// The server measures time and moves itself (solo rooms in game.js); this is a last sanity check.
 export const validateScore = (score) => {
   const { name, level, timeMs, moves } = score ?? {};
   const cleanName = typeof name === "string" ? name.trim() : "";

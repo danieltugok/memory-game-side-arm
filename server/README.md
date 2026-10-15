@@ -3,9 +3,9 @@
 A single Node.js server runs the whole game:
 
 - **The game page.** It serves the Vite build from `dist/`.
-- **Multiplayer.** Over Socket.IO, it keeps every room's state in memory: who is in the room, the cards, whose turn it is and the scores. Browsers only send their moves, and the server sends each player the updated game.
+- **Every game.** Over Socket.IO, it keeps every room's state in memory: who is in the room, the cards, whose turn it is and the scores. Browsers only send their moves, and the server sends each player the updated game.
 
-Single player runs entirely in the browser. It only needs the page.
+Single player is a one-seat "solo" room on the same server. The server times it, counts the moves and saves the score to the leaderboard, so a browser can't fake a score or see a face-down card. Single player needs the server running too.
 
 The server's code lives in this folder. Its dependency (`socket.io`) is listed in the root `package.json`, because Hostinger installs and builds from the repo root.
 

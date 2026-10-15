@@ -281,3 +281,57 @@ test("restart: disconnected players keep their seat", () => {
   assert.equal(room.players.length, 3);
   assert.equal(joinRoom(room, { id: "cy", name: "cy" }), null, "cy can come back");
 });
+
+// Single player: a solo room with one seat
+const soloGame = (level = "easy") => {
+  const room = createRoom({ id: "SOLO01", level, player: { id: "ana", name: "Ana" }, solo: true });
+  assert.ok(startGame(room, "ana", deck));
+  assert.ok(endPreview(room));
+  return room;
+};
+
+test("solo: one player can start, and nobody else can join", () => {
+  const room = soloGame();
+  assert.equal(room.phase, "playing");
+  assert.equal(joinRoom(room, { id: "bob", name: "bob" }), "NOT_FOUND");
+  assert.equal(joinRoom(room, { id: "ana", name: "Ana" }), null, "the player gets their seat back");
+});
+
+test("solo: the server counts moves and times the game from the first flip", () => {
+  const room = soloGame();
+  assert.equal(publicState(room, "ana").started, false);
+  const [x, y] = missIndexes(room);
+  flipCard(room, "ana", x, 1000);
+  assert.equal(publicState(room, "ana").started, true);
+  flipCard(room, "ana", y, 1500);
+  assert.ok(resolveMiss(room));
+  assert.equal(room.turn, "ana", "a miss keeps the turn with the only player");
+  let now = 2000;
+  while (room.phase === "playing") {
+    const [a, b] = pairIndexes(room);
+    flipCard(room, "ana", a, now);
+    flipCard(room, "ana", b, (now += 1000));
+  }
+  assert.equal(room.phase, "finished");
+  assert.equal(room.moves, 7, "one miss and six matches");
+  assert.equal(room.timeMs, now - 1000);
+  assert.equal(publicState(room, "ana").moves, 7);
+});
+
+test("solo: play again resets moves and time", () => {
+  const room = soloGame();
+  const [a, b] = pairIndexes(room);
+  flipCard(room, "ana", a);
+  flipCard(room, "ana", b);
+  assert.ok(restartGame(room, "ana", deck));
+  assert.equal(room.moves, 0);
+  assert.equal(room.startedAt, null);
+});
+
+test("preview: cards get new ids when they turn face down", () => {
+  const room = lobby();
+  startGame(room, "ana", deck);
+  const previewIds = new Set(room.cards.map((card) => card.id));
+  endPreview(room);
+  assert.ok(room.cards.every((card) => !previewIds.has(card.id)));
+});

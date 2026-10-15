@@ -1,4 +1,5 @@
-// SideArm Match server: serves the built game (dist/) and runs multiplayer over Socket.IO.
+// SideArm Match server: serves the built game (dist/) and runs every game, single player
+// included, over Socket.IO.
 // It owns every room's state; browsers only send actions.
 // Env: PORT (default 3001), CLIENT_ORIGIN (optional comma-separated origins allowed to connect
 // from another site; not needed when the game is served by this server), DB_* (see scores.js).
@@ -94,27 +95,6 @@ const sendJson = (res, status, data) => {
   res.end(JSON.stringify(data));
 };
 
-// POST /api/scores { name, level, timeMs, moves } -> { id, scores: top 10 of that level }
-const postScore = async (req, res) => {
-  if (!scores.enabled()) return sendJson(res, 503, { error: "Scores are off" });
-  let body = "";
-  for await (const chunk of req) {
-    body += chunk;
-    if (body.length > 1024) return sendJson(res, 413, { error: "Too large" });
-  }
-  let score;
-  try {
-    score = scores.validateScore(JSON.parse(body));
-  } catch {}
-  if (!score) return sendJson(res, 400, { error: "Invalid score" });
-  try {
-    sendJson(res, 200, await scores.saveScore(score));
-  } catch (err) {
-    console.error("Scores: save failed:", err.message);
-    sendJson(res, 503, { error: "Scores are unavailable" });
-  }
-};
-
 // GET /api/scores?level=easy -> { scores: top 10 of that level }
 const getScores = async (res, level) => {
   if (!scores.enabled()) return sendJson(res, 503, { error: "Scores are off" });
@@ -129,10 +109,8 @@ const getScores = async (res, level) => {
 
 const httpServer = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
-  if (url.pathname === "/api/scores") {
-    if (req.method === "POST") return postScore(req, res);
-    if (req.method === "GET") return getScores(res, url.searchParams.get("level"));
-  }
+  // Scores are only written by the server when a solo game ends, never posted by browsers
+  if (url.pathname === "/api/scores" && req.method === "GET") return getScores(res, url.searchParams.get("level"));
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     return res.end(`SideArm Match server is running. Rooms: ${rooms.size}\n`);
@@ -201,19 +179,36 @@ const enterRoom = (socket, room, playerId) => {
   broadcast(room);
 };
 
+// A solo game just ended: save the time and moves the server measured.
+// Sends solo:result { name, level, timeMs, moves, id, scores } or { ..., error: true }.
+const saveSoloScore = async (socket, room) => {
+  const player = room.players[0];
+  const score = { name: player.name, level: room.level, timeMs: room.timeMs, moves: room.moves };
+  let result = { error: true };
+  const valid = scores.enabled() && scores.validateScore(score);
+  try {
+    if (valid) result = await scores.saveScore(valid);
+  } catch (err) {
+    console.error("Scores: save failed:", err.message);
+  }
+  socket.emit("solo:result", { ...score, ...result });
+};
+
 const sendError = (socket, code) => socket.emit("room:error", { code, message: game.ERRORS[code] });
 
 io.on("connection", (socket) => {
   socket.on("room:info", ({ roomId } = {}, reply) => {
     const room = rooms.get(String(roomId || "").toUpperCase());
-    if (typeof reply === "function") reply(room ? game.roomInfo(room) : { error: "NOT_FOUND" });
+    if (typeof reply === "function") reply(room && !room.solo ? game.roomInfo(room) : { error: "NOT_FOUND" });
   });
 
-  socket.on("room:create", ({ nickname, level, playerId } = {}) => {
+  // A solo room skips the lobby and deals right away
+  socket.on("room:create", ({ nickname, level, playerId, solo } = {}) => {
     if (!playerId || !game.LEVEL_PAIRS[level]) return;
-    const room = game.createRoom({ id: newRoomId(), level, player: { id: playerId, name: nickname } });
+    const room = game.createRoom({ id: newRoomId(), level, player: { id: playerId, name: nickname }, solo: !!solo });
     rooms.set(room.id, room);
     enterRoom(socket, room, playerId);
+    if (room.solo) startRound(room, playerId);
   });
 
   socket.on("room:join", ({ roomId, nickname, playerId } = {}) => {
@@ -245,6 +240,7 @@ io.on("connection", (socket) => {
     const result = game.flipCard(room, socket.data.playerId, Number(index));
     if (!result) return;
     broadcast(room);
+    if (room.solo && room.phase === "finished") saveSoloScore(socket, room);
     if (result === "miss") {
       setTimer(`${room.id}:miss`, SHOW_MISS_MS, () => {
         if (game.resolveMiss(room)) broadcast(room);

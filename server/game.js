@@ -1,4 +1,4 @@
-// Multiplayer game rules. Pure state changes only: no sockets, no timers.
+// Game rules for multiplayer and for single player (a "solo" room with one seat). Pure state changes only: no sockets, no timers.
 // index.js calls these, schedules the timed steps (endPreview, resolveMiss)
 // and broadcasts publicState() to the room after every change.
 
@@ -34,6 +34,8 @@ export const cleanName = (name) =>
 const connectedPlayers = (room) => room.players.filter((p) => p.connected);
 
 const isActive = (room) => ["preview", "playing", "resolving"].includes(room.phase);
+
+const minPlayers = (room) => (room.solo ? 1 : MIN_PLAYERS);
 
 const finish = (room) => {
   room.phase = "finished";
@@ -74,17 +76,22 @@ const afterPlayerGone = (room, playerId) => {
   // In "resolving", resolveMiss() moves the turn on when its timer fires.
 };
 
-export const createRoom = ({ id, level, player }) => {
+// A solo room is single player: nobody else can join, and the server times the game.
+export const createRoom = ({ id, level, player, solo = false }) => {
   if (!LEVEL_PAIRS[level]) throw new Error(`Unknown level: ${level}`);
   return {
     id,
     level,
+    solo,
     hostId: player.id,
     phase: "lobby",
     players: [{ id: player.id, seat: newSeat(), name: cleanName(player.name), score: 0, connected: true }],
     cards: [],
     turn: null,
     flipped: [],
+    moves: 0,
+    startedAt: null, // first flip
+    timeMs: null, // set when the game ends
   };
 };
 
@@ -98,6 +105,7 @@ export const joinRoom = (room, { id, name }) => {
     handOverHost(room);
     return null;
   }
+  if (room.solo) return "NOT_FOUND";
   if (room.phase !== "lobby") return "IN_PROGRESS";
   if (room.players.length >= MAX_PLAYERS) return "FULL";
   room.players.push({ id, seat: newSeat(), name: cleanName(name), score: 0, connected: true });
@@ -107,7 +115,7 @@ export const joinRoom = (room, { id, name }) => {
 export const canStart = (room, playerId) =>
   playerId === room.hostId &&
   (room.phase === "lobby" || room.phase === "finished") &&
-  connectedPlayers(room).length >= MIN_PLAYERS;
+  connectedPlayers(room).length >= minPlayers(room);
 
 // New deck face up for the preview, scores at 0, host plays first.
 const deal = (room, deck, random) => {
@@ -118,6 +126,9 @@ const deal = (room, deck, random) => {
     { id: newSeat(), logo, name, faceUp: true, matched: false },
   ]);
   room.flipped = [];
+  room.moves = 0;
+  room.startedAt = null;
+  room.timeMs = null;
   room.turn = room.hostId;
   room.phase = "preview";
 };
@@ -138,15 +149,17 @@ export const restartGame = (room, playerId, deck, random = Math.random) => {
   return true;
 };
 
+// New card ids, so a card can't be followed from the face-up preview to its new spot
 export const endPreview = (room, random = Math.random) => {
   if (room.phase !== "preview") return false;
-  room.cards = shuffle(room.cards, random).map((card) => ({ ...card, faceUp: false }));
+  room.cards = shuffle(room.cards, random).map((card) => ({ ...card, id: newSeat(), faceUp: false }));
   room.phase = "playing";
   return true;
 };
 
 // Returns "match", "miss", "flipped" (first card of a turn) or null when the move is not allowed.
-export const flipCard = (room, playerId, index) => {
+// `now` times the game: from the first flip to the last match.
+export const flipCard = (room, playerId, index, now = Date.now()) => {
   const card = room.cards[index];
   if (
     room.phase !== "playing" ||
@@ -160,15 +173,20 @@ export const flipCard = (room, playerId, index) => {
   }
 
   card.faceUp = true;
+  room.startedAt ??= now;
   room.flipped.push(index);
   if (room.flipped.length < 2) return "flipped";
 
+  room.moves++;
   const [first, second] = room.flipped.map((i) => room.cards[i]);
   if (first.logo === second.logo) {
     first.matched = second.matched = true;
     room.flipped = [];
     room.players.find((p) => p.id === playerId).score++;
-    if (room.cards.every((c) => c.matched)) finish(room);
+    if (room.cards.every((c) => c.matched)) {
+      room.timeMs = now - room.startedAt;
+      finish(room);
+    }
     return "match";
   }
 
@@ -204,7 +222,7 @@ export const removePlayer = (room, playerId) => {
   afterPlayerGone(room, playerId);
   room.players.splice(index, 1);
   // Only one player left in a game: it ends and they win
-  if (isActive(room) && room.players.length < MIN_PLAYERS) finish(room);
+  if (isActive(room) && room.players.length < minPlayers(room)) finish(room);
   return room.players.length === 0;
 };
 
@@ -221,7 +239,10 @@ export const publicState = (room, viewerId) => {
   return {
     id: room.id,
     level: room.level,
+    solo: room.solo,
     phase: room.phase,
+    moves: room.moves,
+    started: room.startedAt !== null,
     you: seatOf(viewerId),
     host: seatOf(room.hostId),
     turn: seatOf(room.turn),

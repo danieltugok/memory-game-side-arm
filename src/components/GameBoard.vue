@@ -33,8 +33,8 @@ export default {
   props: {
     cards: { type: Array, required: true },
     level: { type: String, required: true },
-    // Multiplayer matches happen on other screens too, so sparkles are driven by the
-    // card state here. Single player fires its own sparkles from the click.
+    // Matches come from the server (and in multiplayer, from other screens), so sparkles
+    // are driven by the card state here.
     sparkleOnMatch: { type: Boolean, default: false },
   },
   emits: ["flip"],

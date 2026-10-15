@@ -104,7 +104,7 @@
         <h2 class="text-xl font-bold">Couldn't reach the game server</h2>
         <div class="flex gap-4">
           <button class="btn-outline px-5 py-4" @click="mp.retry">Retry</button>
-          <button class="btn-outline px-5 py-4" @click="backToStart">Play single player</button>
+          <button class="btn-outline px-5 py-4" @click="backToStart">Back</button>
         </div>
       </template>
       <template v-else>
@@ -123,14 +123,7 @@
     />
 
     <GameBoard
-      v-else-if="screen === 'single'"
-      :cards="single.cards"
-      :level="single.level"
-      @flip="single.flip"
-    />
-
-    <GameBoard
-      v-else-if="screen === 'multi'"
+      v-else-if="screen === 'single' || screen === 'multi'"
       :cards="multiCards"
       :level="mp.room.level"
       sparkleOnMatch
@@ -201,8 +194,8 @@ export default {
   },
   setup() {
     // reactive() unwraps the refs, so the template can use single.cards, mp.room, ...
-    const single = reactive(useSinglePlayer());
     const mp = reactive(useMultiplayer());
+    const single = reactive(useSinglePlayer(mp));
 
     const mode = ref(null); // null (start screen) | "single" | "multi"
     const joinInfo = ref(null); // room summary when opened from a room link
@@ -213,9 +206,9 @@ export default {
     let nickname = "";
 
     const screen = computed(() => {
-      if (mode.value === "single") return "single";
-      if (mp.room) return mp.room.phase === "lobby" ? "lobby" : "multi";
-      if (mode.value === "multi" || loadingRoomInfo.value) return "connecting";
+      // Single player is a solo room on the server too
+      if (mp.room) return mode.value === "single" ? "single" : mp.room.phase === "lobby" ? "lobby" : "multi";
+      if (mode.value || loadingRoomInfo.value) return "connecting";
       return "start";
     });
 
@@ -229,7 +222,7 @@ export default {
       return winner ? `${winner.name} wins!` : null;
     });
 
-    // Server cards in the shape GameBoard expects. Face-down cards have no logo yet.
+    // Server cards (both modes) in the shape GameBoard expects. Face-down cards have no logo.
     const multiCards = computed(() =>
       (mp.room?.cards ?? []).map((card, index) => ({
         key: card.id,
@@ -295,13 +288,14 @@ export default {
       setRoomInUrl(null);
     };
 
-    // Entered a room: put it in the URL and remember it so a reload rejoins
+    // Entered a room: remember it so a dropped connection rejoins, and put a multiplayer room
+    // in the URL so a reload rejoins too (a solo room can't be joined from a link)
     watch(
       () => mp.room?.id,
       (roomId) => {
         if (!roomId) return;
         mp.rememberRoom(nickname);
-        setRoomInUrl(roomId);
+        if (mode.value === "multi") setRoomInUrl(roomId);
         joinInfo.value = null;
       }
     );

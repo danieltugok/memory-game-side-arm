@@ -41,6 +41,7 @@ export function useMultiplayer() {
   const room = ref(null);
   const error = ref(null);
   const notice = ref(null); // short message from the server, e.g. "Ana restarted the game"
+  const result = ref(null); // after a solo win: the score the server saved (see saveSoloScore)
   let noticeTimer = null;
   const playerId = getPlayerId();
 
@@ -81,7 +82,10 @@ export function useMultiplayer() {
     socket.on("room:state", (state) => {
       room.value = state;
       error.value = null;
+      if (state.phase !== "finished") result.value = null;
     });
+
+    socket.on("solo:result", (score) => (result.value = score));
 
     socket.on("room:notice", ({ message }) => {
       notice.value = message;
@@ -115,8 +119,9 @@ export function useMultiplayer() {
     socket.connect();
   };
 
-  const createRoom = (nickname, level) =>
-    connectThen(() => socket.emit("room:create", { nickname, level, playerId }));
+  // solo: single player, played on the server so the browser never sees a face-down card
+  const createRoom = (nickname, level, solo = false) =>
+    connectThen(() => socket.emit("room:create", { nickname, level, playerId, solo }));
 
   const joinRoom = (roomId, nickname) =>
     connectThen(() => {
@@ -148,6 +153,7 @@ export function useMultiplayer() {
     room.value = null;
     error.value = null;
     notice.value = null;
+    result.value = null;
     status.value = "idle";
     saveRoom(null, null);
   };
@@ -166,6 +172,7 @@ export function useMultiplayer() {
     room,
     error,
     notice,
+    result,
     me,
     isHost,
     isMyTurn,
